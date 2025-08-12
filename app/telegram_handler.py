@@ -17,11 +17,12 @@ class TelegramHandler:
         # Add handlers
         # Store message handler should come first to catch all messages
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.store_message, block=False))
+        self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo, block=False))
         self.application.add_handler(CommandHandler("context", self.context_command))
         self.application.add_handler(CommandHandler("b", self.bee_command))
 
     async def store_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Store incoming messages in the database"""
+        """Store incoming messages in the database and handle image analysis requests in replies"""
         self.logger.info(f"Received update: {update}")
         if not update.message:
             self.logger.warning("Received update without message")
@@ -37,6 +38,7 @@ class TelegramHandler:
         message_text = f"{username}: {message.text}"
         self.logger.info(f"Storing message from {username} (chat_id: {message.chat_id}): {message_text[:100]}...")
 
+        # Store the message
         self.db.store_message(
             chat_id=message.chat_id,
             user_id=message.from_user.id,
@@ -44,6 +46,39 @@ class TelegramHandler:
             message_text=message.text,
             timestamp=message.date
         )
+
+        # Check if this is a reply to a photo and starts with 'b' or 'bot'
+        if message.reply_to_message and message.reply_to_message.photo:
+            text_lower = message.text.lower().strip()
+            if text_lower.startswith('b ') or text_lower.startswith('bot '):
+                # Get the actual query by removing the prefix
+                if text_lower.startswith('bot '):
+                    query = message.text[4:].strip()  # Remove 'bot ' prefix
+                else:  # starts with 'b '
+                    query = message.text[2:].strip()  # Remove 'b ' prefix
+
+                # Get the largest photo size
+                photo = message.reply_to_message.photo[-1]
+
+                # Download the photo
+                photo_file = await context.bot.get_file(photo.file_id)
+                photo_bytes = await photo_file.download_as_bytearray()
+
+                # Process the photo with the brain
+                system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
+                response = await self.brain.process_image(photo_bytes, query, system_prompt)
+
+                # Store the bot's response
+                self.db.store_message(
+                    chat_id=message.chat_id,
+                    user_id=self.application.bot.id,
+                    username=self.application.bot.username or "Bot",
+                    message_text=response,
+                    timestamp=message.date
+                )
+
+                self.logger.info(f"Generated response for photo reply: {response[:100]}...")
+                await message.reply_text(response)
 
     async def context_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /context command to set the bot's behavior"""
@@ -122,6 +157,67 @@ class TelegramHandler:
         )
 
         self.logger.info(f"Generated response for {username}: {response[:100]}...")
+        await update.message.reply_text(response)
+
+    async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle incoming photos"""
+        chat_id = update.effective_chat.id
+        username = update.effective_user.username or update.effective_user.first_name
+        caption = update.message.caption or ""
+
+        self.logger.info(f"Received photo from {username} (chat_id: {chat_id}) with caption: {caption}")
+
+        # Store that we received a photo regardless of processing
+        self.db.store_message(
+            chat_id=chat_id,
+            user_id=update.effective_user.id,
+            username=username,
+            message_text=f"[Photo{' with caption: ' + caption if caption else ''}]",
+            timestamp=update.message.date
+        )
+
+        # Only process if caption starts with 'b' or 'bot'
+        caption_lower = caption.lower().strip()
+        if not (caption_lower.startswith('b ') or caption_lower.startswith('bot ')):
+            self.logger.info("Skipping photo analysis - caption doesn't start with 'b' or 'bot'")
+            return
+
+        # Get the actual query by removing the prefix
+        if caption_lower.startswith('bot '):
+            query = caption[4:].strip()  # Remove 'bot ' prefix
+        else:  # starts with 'b '
+            query = caption[2:].strip()  # Remove 'b ' prefix
+
+        # Get the largest photo size
+        photo = update.message.photo[-1]
+
+        # Download the photo
+        photo_file = await context.bot.get_file(photo.file_id)
+        photo_bytes = await photo_file.download_as_bytearray()
+
+        # Process the photo with the brain
+        system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
+        response = await self.brain.process_image(photo_bytes, query, system_prompt)
+
+        # Store the command and response in the database
+        if caption:
+            self.db.store_message(
+                chat_id=chat_id,
+                user_id=update.effective_user.id,
+                username=username,
+                message_text=f"[Photo with caption: {caption}]",
+                timestamp=update.message.date
+            )
+
+        self.db.store_message(
+            chat_id=chat_id,
+            user_id=self.application.bot.id,
+            username=self.application.bot.username or "Bot",
+            message_text=response,
+            timestamp=update.message.date
+        )
+
+        self.logger.info(f"Generated response for photo: {response[:100]}...")
         await update.message.reply_text(response)
 
     def run(self):

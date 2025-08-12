@@ -1,6 +1,6 @@
 # Telegram Bot v2
 
-A Python-based Telegram bot application with message handling and database storage capabilities.
+A Python-based Telegram bot application with text and image processing capabilities, powered by Google's Gemini AI models. The bot can handle text messages, process images with or without captions, and maintain conversation context.
 
 ## Prerequisites
 
@@ -32,6 +32,47 @@ export GEMINI_API_KEY='your_gemini_api_key_here'
 
 # Optional environment variables
 export DB_PATH='database/messages.db'
+```
+
+## Features
+
+- Text message processing with Gemini 2.5 Pro
+- Image analysis with Gemini Pro Vision
+- Context-aware conversations
+- Message history tracking
+- Customizable system prompts
+
+## Usage
+
+### Text Messages
+Send a message with the `/b` command followed by your query:
+```bash
+/b What's the weather like today?
+```
+
+### Image Analysis
+There are two ways to get the bot to analyze an image:
+
+1. Send an image with a caption starting with 'b ' or 'bot ':
+```
+bot what's in this image?
+b describe this
+```
+
+2. Reply to any image with a message starting with 'b ' or 'bot ':
+```
+bot what do you see here?
+b explain this image
+```
+
+Images without these triggers will be logged but not analyzed.
+
+### Context Management
+Use the `/context` command to manage conversation context:
+```bash
+/context be more technical     # Adds technical context
+/context show                  # Shows all active contexts
+/context clear                 # Clears all contexts
 ```
 
 ## Running the Bot

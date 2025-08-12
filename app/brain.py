@@ -15,7 +15,9 @@ class BrainHandler:
 
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel('gemini-2.5-pro')
-        self.logger.info("Brain initialized with Gemini 2.5 Pro model")
+        # Use the same model for both text and vision since gemini-2.5-pro is multimodal
+        self.vision_model = self.model
+        self.logger.info("Brain initialized with Gemini models (2.5 Pro and Pro Vision)")
 
     def process(self, query: str, recent_messages: List[Dict], system_prompt: str = "") -> str:
         """Process a query with context from recent messages"""
@@ -65,3 +67,25 @@ Please provide a concise and relevant response."""
             return all(c in "0123456789+-*/(). " for c in query)
         except:
             return False
+
+    async def process_image(self, image_bytes: bytearray, caption: str, system_prompt: str = "") -> str:
+        """Process an image with optional caption using Gemini Pro Vision"""
+        from PIL import Image
+        import io
+
+        # Convert bytearray to PIL Image
+        image = Image.open(io.BytesIO(image_bytes))
+
+        prompt = f"""
+{system_prompt}Please analyze this image{' and respond to: ' + caption if caption else '.'}
+
+Provide a clear and concise response."""
+
+        self.logger.info("Processing image with prompt:")
+        self.logger.info("---START PROMPT---")
+        self.logger.info(prompt)
+        self.logger.info("---END PROMPT---")
+
+        response = self.vision_model.generate_content([prompt, image])
+        return response.text
+
