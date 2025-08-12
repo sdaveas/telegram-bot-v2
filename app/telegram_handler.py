@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 from .database import DatabaseHandler
 from .brain import BrainHandler
+from .voice_handler import VoiceHandler
 from .logger import setup_logger
 
 class TelegramHandler:
@@ -12,12 +13,14 @@ class TelegramHandler:
         self.application = Application.builder().token(token).build()
         self.db = DatabaseHandler(db_path)
         self.brain = BrainHandler()
+        self.voice = VoiceHandler()
         self.logger.info("Telegram bot initialized")
 
         # Add handlers
         # Store message handler should come first to catch all messages
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.store_message, block=False))
         self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo, block=False))
+        self.application.add_handler(MessageHandler(filters.VOICE, self.handle_voice, block=False))
         self.application.add_handler(CommandHandler("context", self.context_command))
         self.application.add_handler(CommandHandler("b", self.bee_command))
 
@@ -47,10 +50,12 @@ class TelegramHandler:
             timestamp=message.date
         )
 
-        # Check if this is a reply to a photo and starts with 'b' or 'bot'
-        if message.reply_to_message and message.reply_to_message.photo:
+        # Check if this is a reply to a photo or voice message
+        if message.reply_to_message:
             text_lower = message.text.lower().strip()
-            if text_lower.startswith('b ') or text_lower.startswith('bot '):
+
+            # Handle photo replies
+            if message.reply_to_message.photo and (text_lower.startswith('b ') or text_lower.startswith('bot ')):
                 # Get the actual query by removing the prefix
                 if text_lower.startswith('bot '):
                     query = message.text[4:].strip()  # Remove 'bot ' prefix
@@ -59,7 +64,6 @@ class TelegramHandler:
 
                 # Get the largest photo size
                 photo = message.reply_to_message.photo[-1]
-
                 # Download the photo
                 photo_file = await context.bot.get_file(photo.file_id)
                 photo_bytes = await photo_file.download_as_bytearray()
@@ -79,6 +83,46 @@ class TelegramHandler:
 
                 self.logger.info(f"Generated response for photo reply: {response[:100]}...")
                 await message.reply_text(response)
+
+            # Handle voice message replies
+            elif message.reply_to_message.voice:
+                    # For voice messages, handle simple transcription requests
+                    if text_lower in ['?', 'b', 'bot']:
+                        # Download and transcribe
+                        voice = message.reply_to_message.voice
+                        voice_file = await context.bot.get_file(voice.file_id)
+                        voice_bytes = await voice_file.download_as_bytearray()
+                        transcript = await self.voice.transcribe_voice(voice_bytes)
+                        # Just return the transcript
+                        self.logger.info(f"Providing transcript for voice message")
+                        await message.reply_text(f"Transcript: {transcript}")
+                    # Handle full queries starting with 'b ' or 'bot '
+                    elif text_lower.startswith('b ') or text_lower.startswith('bot '):
+                        # Get the query
+                        if text_lower.startswith('bot '):
+                            query = message.text[4:].strip()  # Remove 'bot ' prefix
+                        else:  # starts with 'b '
+                            query = message.text[2:].strip()  # Remove 'b ' prefix
+                        # Download and transcribe
+                        voice = message.reply_to_message.voice
+                        voice_file = await context.bot.get_file(voice.file_id)
+                        voice_bytes = await voice_file.download_as_bytearray()
+                        transcript = await self.voice.transcribe_voice(voice_bytes)
+                        # Process the query
+                        system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
+                        response = self.brain.process(f"Voice message transcript: {transcript}\n\nUser query: {query}", [], system_prompt)
+                        # Respond with both transcript and answer
+                        full_response = f"Transcript: {transcript}\n\nAnswer: {response}"
+                        # Store the response
+                        self.db.store_message(
+                            chat_id=message.chat_id,
+                            user_id=self.application.bot.id,
+                            username=self.application.bot.username or "Bot",
+                            message_text=full_response,
+                            timestamp=message.date
+                        )
+                        self.logger.info(f"Generated response for voice message query: {full_response[:100]}...")
+                        await message.reply_text(full_response)
 
     async def context_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /context command to set the bot's behavior"""
@@ -219,6 +263,23 @@ class TelegramHandler:
 
         self.logger.info(f"Generated response for photo: {response[:100]}...")
         await update.message.reply_text(response)
+
+    async def handle_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle voice messages"""
+        chat_id = update.effective_chat.id
+        username = update.effective_user.username or update.effective_user.first_name
+
+        self.logger.info(f"Received voice message from {username} (chat_id: {chat_id})")
+
+        # Just log that we received a voice message (no response to the user)
+        self.logger.info("Voice message stored in chat history")
+        self.db.store_message(
+            chat_id=chat_id,
+            user_id=update.effective_user.id,
+            username=username,
+            message_text="[Voice message]",
+            timestamp=update.message.date
+        )
 
     def run(self):
         """Run the bot"""

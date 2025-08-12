@@ -8,8 +8,8 @@ A Python-based Telegram bot application with text and image processing capabilit
 - Pipenv
 - Docker and Docker Compose (for containerized deployment)
 - Telegram Bot Token (from @BotFather)
-- Google Cloud Project with Gemini API enabled
 - Gemini API Key
+- ffmpeg (for voice message processing)
 
 ## Installation
 
@@ -38,6 +38,7 @@ export DB_PATH='database/messages.db'
 
 - Text message processing with Gemini 2.5 Pro
 - Image analysis with Gemini Pro Vision
+- Greek voice message transcription with Vosk
 - Context-aware conversations
 - Message history tracking
 - Customizable system prompts
@@ -66,6 +67,26 @@ b explain this image
 ```
 
 Images without these triggers will be logged but not analyzed.
+
+### Voice Messages
+You can send voice messages in Greek and interact with them in two ways:
+
+1. Get the transcription:
+```
+[Send voice message]
+[Reply with: ?, b, or bot]
+-> Bot responds with the Greek transcription
+```
+
+2. Get transcription and ask a question:
+```
+[Send voice message]
+[Reply with: "b what did they say about X?" or "bot explain what they meant"]
+-> Bot responds with both the transcription and answers your question
+```
+
+Voice messages are processed using Vosk's offline Greek speech recognition model.
+The model files are automatically downloaded to the `models` directory on first run.
 
 ### Context Management
 Use the `/context` command to manage conversation context:
@@ -104,7 +125,10 @@ telegram-bot-v2/
 │   ├── brain.py
 │   ├── database.py
 │   ├── logger.py
-│   └── telegram_handler.py
+│   ├── telegram_handler.py
+│   └── voice_handler.py
+├── models/            # Speech recognition models (auto-downloaded)
+│   └── vosk-model-el-gr-0.7/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile

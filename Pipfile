@@ -8,6 +8,9 @@ python-telegram-bot = ">=20.0"
 google-generativeai = ">=0.3.0"
 pillow = "*"
 google-cloud-vision = "*"
+python-ffmpeg = "*"
+google-cloud-speech = "*"
+vosk = "*"
 
 [dev-packages]
 

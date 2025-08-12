@@ -1,3 +1,6 @@
+# Vosk speech recognition models
+models/
+
 .env
 Pipfile.lock
 __pycache__
