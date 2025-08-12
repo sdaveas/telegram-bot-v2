@@ -1,0 +1,5 @@
+.env
+Pipfile.lock
+__pycache__
+logs/
+database/*.db
