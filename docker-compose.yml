@@ -6,6 +6,7 @@ services:
     volumes:
       - ./database:/app/database
       - ./logs:/app/logs
+      - ./models:/app/models
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
