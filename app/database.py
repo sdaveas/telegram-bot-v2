@@ -11,6 +11,7 @@ class DatabaseHandler:
         """Create the necessary tables if they don't exist"""
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
+            # Messages table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS messages (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,6 +20,15 @@ class DatabaseHandler:
                     username TEXT,
                     message_text TEXT NOT NULL,
                     timestamp DATETIME NOT NULL
+                )
+            ''')
+            # Settings table with chat_id support
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS settings (
+                    chat_id INTEGER NOT NULL,
+                    key TEXT NOT NULL,
+                    value TEXT NOT NULL,
+                    PRIMARY KEY (chat_id, key)
                 )
             ''')
             conn.commit()
@@ -56,3 +66,19 @@ class DatabaseHandler:
                 })
 
             return messages
+
+    def get_setting(self, chat_id: int, key: str, default: str = None) -> str:
+        """Get a setting value by chat_id and key"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT value FROM settings WHERE chat_id = ? AND key = ?', (chat_id, key))
+            result = cursor.fetchone()
+            return result[0] if result else default
+
+    def set_setting(self, chat_id: int, key: str, value: str):
+        """Set a setting value for a specific chat"""
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute('INSERT OR REPLACE INTO settings (chat_id, key, value) VALUES (?, ?, ?)',
+                          (chat_id, key, value))
+            conn.commit()

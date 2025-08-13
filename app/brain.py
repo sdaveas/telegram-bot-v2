@@ -4,8 +4,19 @@ import google.generativeai as genai
 from .logger import setup_logger
 
 class BrainHandler:
-    def __init__(self):
-        """Initialize the brain with Gemini"""
+    AVAILABLE_MODELS = {
+        1: 'gemini-2.5-pro',
+        2: 'gemini-2.5-flash',
+        3: 'gemini-2.5-flash-lite'
+    }
+
+    def __init__(self, model_index: int = 3):
+        self.current_model_index = model_index
+        """Initialize the brain with Gemini
+
+        Args:
+            model_index: Index of the model to use (1-3). Defaults to 3 (gemini-2.5-flash-lite).
+        """
         self.logger = setup_logger()
 
         api_key = os.getenv('GEMINI_API_KEY')
@@ -13,17 +24,29 @@ class BrainHandler:
             self.logger.error("GEMINI_API_KEY environment variable is not set")
             raise ValueError("GEMINI_API_KEY environment variable is not set")
 
-        genai.configure(api_key=api_key)
-        # self.model = genai.GenerativeModel('gemini-2.5-pro')
-        self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
-        # Use the same model for both text and vision since gemini-2.5-pro is multimodal
-        self.vision_model = self.model
-        self.logger.info("Brain initialized with Gemini models (2.5 Pro and Pro Vision)")
+        if model_index not in self.AVAILABLE_MODELS:
+            self.logger.error(f"Invalid model index {model_index}")
+            raise ValueError(f"Invalid model index {model_index}. Must be 1-{len(self.AVAILABLE_MODELS)}")
 
+        genai.configure(api_key=api_key)
+        self.model_name = self.AVAILABLE_MODELS[model_index]
+        try:
+            self.model = genai.GenerativeModel(self.model_name)
+            # All models are multimodal
+            self.vision_model = self.model
+            # Test model initialization
+            self.model.generate_content('test')
+        except Exception as e:
+            self.logger.error(f"Failed to initialize model {self.model_name}: {str(e)}")
+            raise
+        self.logger.info(f"Brain initialized with Gemini model {self.model_name}")
     def process(self, query: str, recent_messages: List[Dict], system_prompt: str = "") -> str:
         """Process a query with context from recent messages"""
         # Format recent messages as context
         context = self._format_context(recent_messages)
+
+        # Log the current model
+        self.logger.info(f"Using model: {self.model_name}")
 
         # Simple arithmetic operations
         if self._is_arithmetic(query):
@@ -46,8 +69,20 @@ Please provide a concise and relevant response."""
         self.logger.info(prompt)
         self.logger.info("---END PROMPT---")
 
-        response = self.model.generate_content(prompt)
-        return response.text
+        try:
+            response = self.model.generate_content(prompt)
+            if not response.candidates:
+                return "I apologize, but I cannot provide a response to that query due to safety constraints."
+            return response.text
+        except ValueError as e:
+            self.logger.warning(f"Gemini API ValueError: {str(e)}")
+            return "I apologize, but I cannot provide a response to that query due to safety constraints."
+        except Exception as e:
+            self.logger.error(f"Gemini API error: {str(e)}")
+            # For internal server errors, suggest retry
+            if 'InternalServerError' in str(type(e)):
+                return "I encountered a temporary error. Please try your request again in a moment."
+            return "I apologize, but I encountered an error processing your request."
 
     def _format_context(self, messages: List[Dict]) -> str:
         """Format recent messages into a string context"""
@@ -74,6 +109,9 @@ Please provide a concise and relevant response."""
         from PIL import Image
         import io
 
+        # Log the current model
+        self.logger.info(f"Using model: {self.model_name}")
+
         # Convert bytearray to PIL Image
         image = Image.open(io.BytesIO(image_bytes))
 
@@ -87,6 +125,18 @@ Provide a clear and concise response."""
         self.logger.info(prompt)
         self.logger.info("---END PROMPT---")
 
-        response = self.vision_model.generate_content([prompt, image])
-        return response.text
+        try:
+            response = self.vision_model.generate_content([prompt, image])
+            if not response.candidates:
+                return "I apologize, but I cannot analyze this image due to safety constraints."
+            return response.text
+        except ValueError as e:
+            self.logger.warning(f"Gemini API ValueError: {str(e)}")
+            return "I apologize, but I cannot analyze this image due to safety constraints."
+        except Exception as e:
+            self.logger.error(f"Gemini API error: {str(e)}")
+            # For internal server errors, suggest retry
+            if 'InternalServerError' in str(type(e)):
+                return "I encountered a temporary error. Please try analyzing the image again in a moment."
+            return "I apologize, but I encountered an error analyzing this image."
 

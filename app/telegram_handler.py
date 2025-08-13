@@ -12,9 +12,9 @@ class TelegramHandler:
         self.logger.info("Bot is running with detailed logging enabled.")
         self.application = Application.builder().token(token).build()
         self.db = DatabaseHandler(db_path)
-        self.brain = BrainHandler()
+        # Dictionary to hold brain instances per chat
+        self.brains = {}
         self.voice = VoiceHandler()
-        self.logger.info("Telegram bot initialized")
 
         # Add handlers
         # Store message handler should come first to catch all messages
@@ -22,7 +22,19 @@ class TelegramHandler:
         self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo, block=False))
         self.application.add_handler(MessageHandler(filters.VOICE, self.handle_voice, block=False))
         self.application.add_handler(CommandHandler("context", self.context_command))
+        self.application.add_handler(CommandHandler("model", self.model_command))
         self.application.add_handler(CommandHandler("b", self.bee_command))
+
+        self.logger.info("Telegram bot initialized")
+
+    def get_brain(self, chat_id: int) -> BrainHandler:
+        """Get or create a BrainHandler for the given chat_id"""
+        if chat_id not in self.brains:
+            # Retrieve last used model for chat or use default
+            model_index = int(self.db.get_setting(chat_id, 'model_index', 3))
+            self.brains[chat_id] = BrainHandler(model_index)
+
+        return self.brains[chat_id]
 
     async def store_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Store incoming messages in the database and handle image analysis requests in replies"""
@@ -70,7 +82,8 @@ class TelegramHandler:
 
                 # Process the photo with the brain
                 system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
-                response = await self.brain.process_image(photo_bytes, query, system_prompt)
+                brain = self.get_brain(chat_id)
+                response = await brain.process_image(photo_bytes, query, system_prompt)
 
                 # Store the bot's response
                 self.db.store_message(
@@ -110,7 +123,8 @@ class TelegramHandler:
                         transcript = await self.voice.transcribe_voice(voice_bytes)
                         # Process the query
                         system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
-                        response = self.brain.process(f"Voice message transcript: {transcript}\n\nUser query: {query}", [], system_prompt)
+                        brain = self.get_brain(message.chat_id)
+                        response = brain.process(f"Voice message transcript: {transcript}\n\nUser query: {query}", [], system_prompt)
                         # Respond with both transcript and answer
                         full_response = f"Transcript: {transcript}\n\nAnswer: {response}"
                         # Store the response
@@ -188,8 +202,9 @@ class TelegramHandler:
             )
 
         # Process the query with the brain
+        brain = self.get_brain(chat_id)
         system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
-        response = self.brain.process(query, recent_messages, system_prompt)
+        response = brain.process(query, recent_messages, system_prompt)
 
         # Store the bot's response
         self.db.store_message(
@@ -244,7 +259,8 @@ class TelegramHandler:
 
         # Process the photo with the brain
         system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
-        response = await self.brain.process_image(photo_bytes, query, system_prompt)
+        brain = self.get_brain(chat_id)
+        response = await brain.process_image(photo_bytes, query, system_prompt)
 
         # Store the command and response in the database
         if caption:
@@ -283,6 +299,59 @@ class TelegramHandler:
             message_text="[Voice message]",
             timestamp=update.message.date
         )
+
+    async def model_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle the /model command to select or view available models"""
+        chat_id = update.effective_chat.id
+        username = update.effective_user.username or update.effective_user.first_name
+
+        try:
+            if not context.args:
+                # List available models with current one marked
+                models = []
+                brain = self.get_brain(chat_id)
+                for idx, name in BrainHandler.AVAILABLE_MODELS.items():
+                    marker = "(active)" if idx == brain.current_model_index else ""
+                    models.append(f"{idx}. {name} {marker}")
+                models_text = "\n".join(models)
+                await update.message.reply_text(f"Available models:\n{models_text}\n\nUse /model <number> to select a model")
+                return
+
+            # Parse model index
+            try:
+                model_index = int(context.args[0])
+            except ValueError:
+                await update.message.reply_text("Please provide a valid model number (1-3)")
+                return
+
+            # Validate and switch model
+            if model_index not in BrainHandler.AVAILABLE_MODELS:
+                await update.message.reply_text(f"Invalid model index. Must be 1-{len(BrainHandler.AVAILABLE_MODELS)}")
+                return
+
+            # Initialize or update brain for this chat with the selected model
+            brain = BrainHandler(model_index)
+            self.brains[chat_id] = brain
+            model_name = BrainHandler.AVAILABLE_MODELS[model_index]
+            # Store the selected model index for this chat
+            self.db.set_setting(chat_id, 'model_index', str(model_index))
+
+            await update.message.reply_text(f"Switched to model: {model_name}")
+
+            # Store the command
+            command_text = f"{username}: /model {model_index}"
+            self.db.store_message(
+                chat_id=chat_id,
+                user_id=-1,  # Special ID for command
+                username="command",
+                message_text=command_text,
+                timestamp=update.message.date
+            )
+
+        except Exception as e:
+            error_msg = f"Error switching model: {str(e)}"
+            self.logger.error(error_msg)
+            await update.message.reply_text(error_msg)
 
     def run(self):
         """Run the bot"""
