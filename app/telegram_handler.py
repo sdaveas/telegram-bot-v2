@@ -220,14 +220,17 @@ class TelegramHandler:
             timestamp=update.message.date
         )
 
-        # Only process if caption starts with 'b' or 'bot'
+        # Only process if caption is 'b'/'bot' or starts with 'b '/'bot '
         caption_lower = caption.lower().strip()
-        if not (caption_lower.startswith('b ') or caption_lower.startswith('bot ')):
-            self.logger.info("Skipping photo analysis - caption doesn't start with 'b' or 'bot'")
+        if not (caption_lower == 'b' or caption_lower == 'bot' or
+                caption_lower.startswith('b ') or caption_lower.startswith('bot ')):
+            self.logger.info("Skipping photo analysis - caption must be 'b'/'bot' or start with 'b '/'bot '")
             return
 
-        # Get the actual query by removing the prefix
-        if caption_lower.startswith('bot '):
+        # Set query - use a default when caption is just 'b' or 'bot'
+        if caption_lower == 'b' or caption_lower == 'bot':
+            query = "Please analyze this image."
+        elif caption_lower.startswith('bot '):
             query = caption[4:].strip()  # Remove 'bot ' prefix
         else:  # starts with 'b '
             query = caption[2:].strip()  # Remove 'b ' prefix
