@@ -14,7 +14,8 @@ class BrainHandler:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
 
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-2.5-pro')
+        # self.model = genai.GenerativeModel('gemini-2.5-pro')
+        self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
         # Use the same model for both text and vision since gemini-2.5-pro is multimodal
         self.vision_model = self.model
         self.logger.info("Brain initialized with Gemini models (2.5 Pro and Pro Vision)")
