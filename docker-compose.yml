@@ -4,8 +4,8 @@ services:
   telegram-bot:
     build: .
     volumes:
-      - ./database:/app/database
-      - ./logs:/app/logs
+      - ./database:/src/database
+      - ./logs:/src/logs
     environment:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
