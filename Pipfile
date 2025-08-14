@@ -11,6 +11,7 @@ google-cloud-vision = "*"
 python-ffmpeg = "*"
 google-cloud-speech = "*"
 vosk = "*"
+gtts = "*"
 
 [dev-packages]
 

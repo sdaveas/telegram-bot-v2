@@ -6,3 +6,8 @@ Pipfile.lock
 __pycache__
 logs/
 database/*.db
+
+# Test output files
+test/*.mp3
+test/*.ogg
+test/*.wav

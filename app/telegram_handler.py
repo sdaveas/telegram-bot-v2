@@ -3,6 +3,7 @@ from telegram.ext import Application, CommandHandler, MessageHandler, ContextTyp
 from .database import DatabaseHandler
 from .brain import BrainHandler
 from .voice_handler import VoiceHandler
+from .tts_handler import TTSHandler
 from .logger import setup_logger
 
 class TelegramHandler:
@@ -15,6 +16,7 @@ class TelegramHandler:
         # Dictionary to hold brain instances per chat
         self.brains = {}
         self.voice = VoiceHandler()
+        self.tts = TTSHandler()
 
         # Add handlers
         # Store message handler should come first to catch all messages
@@ -62,9 +64,39 @@ class TelegramHandler:
             timestamp=message.date
         )
 
-        # Check if this is a reply to a photo or voice message
+        # Check if this is a reply to another message
         if message.reply_to_message:
             text_lower = message.text.lower().strip()
+
+            # Handle TTS requests for text messages
+            if message.reply_to_message.text and text_lower == 'tts':
+                # Get the text to convert to speech
+                text_to_speak = message.reply_to_message.text
+
+                self.logger.info(f"TTS request from {username} for text: {text_to_speak[:50]}...")
+
+                try:
+                    # Generate speech with Greek voice (handles both Greek and English)
+                    await message.reply_text("🔊 Generating speech...")
+                    audio_bytes = await self.tts.generate_speech(text_to_speak)
+
+                    if audio_bytes:
+                        # Send as voice message
+                        await message.reply_voice(
+                            voice=audio_bytes,
+                            caption=f"🔊 TTS: {text_to_speak[:100]}{'...' if len(text_to_speak) > 100 else ''}"
+                        )
+                        self.logger.info(f"Successfully sent TTS audio")
+                    else:
+                        await message.reply_text(
+                            "Sorry, I couldn't generate speech for that text."
+                        )
+                except Exception as e:
+                    error_msg = f"Error generating speech: {str(e)}"
+                    self.logger.error(error_msg)
+                    await message.reply_text(f"Sorry, an error occurred: {error_msg}")
+
+                return  # Exit early after handling TTS
 
             # Handle photo replies
             if message.reply_to_message.photo and (text_lower.startswith('b ') or text_lower.startswith('bot ')):
