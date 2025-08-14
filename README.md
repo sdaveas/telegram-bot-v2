@@ -1,15 +1,14 @@
 # Telegram Bot v2
 
-A Python-based Telegram bot application with text and image processing capabilities, powered by Google's Gemini AI models. The bot can handle text messages, process images with or without captions, and maintain conversation context.
+A Python-based Telegram bot with advanced AI capabilities, powered by Google's Gemini models. Features include text processing, image analysis, speech-to-text transcription, and text-to-speech synthesis for Greek and English content.
 
 ## Prerequisites
 
-- Python 3.x
+- Python 3.13+
 - Pipenv
-- Docker and Docker Compose (for containerized deployment)
+- Docker and Docker Compose (optional, for containerized deployment)
 - Telegram Bot Token (from @BotFather)
 - Gemini API Key
-- ffmpeg (for voice message processing)
 
 ## Installation
 
@@ -36,19 +35,38 @@ export DB_PATH='database/messages.db'
 
 ## Features
 
-- Text message processing with Gemini 2.5 Pro
-- Image analysis with Gemini Pro Vision
-- Greek voice message transcription with Vosk
-- Context-aware conversations
-- Message history tracking
-- Customizable system prompts
+### Core Capabilities
+- **Text Processing**: Multiple Gemini models (2.5 Pro, 2.5 Flash, 2.5 Flash-Lite)
+- **Image Analysis**: Multimodal image understanding with caption queries
+- **Speech-to-Text**: Voice message transcription using Gemini 1.5 Flash (Greek/English)
+- **Text-to-Speech**: Generate voice messages from text using gTTS (Greek voice)
+- **Context Management**: Maintain conversation context across messages
+- **Message History**: SQLite database for conversation tracking
+- **Model Switching**: Change between different Gemini models on the fly
 
 ## Usage
 
-### Text Messages
-Send a message with the `/b` command followed by your query:
-```bash
+### Commands
+
+#### `/b <query>` - Ask the bot anything
+```
 /b What's the weather like today?
+/b Explain quantum computing
+```
+
+#### `/model [number]` - Switch AI models
+```
+/model        # Show available models
+/model 1      # Switch to Gemini 2.5 Pro
+/model 2      # Switch to Gemini 2.5 Flash
+/model 3      # Switch to Gemini 2.5 Flash-Lite (default)
+```
+
+#### `/context <setting>` - Manage conversation context
+```
+/context be more technical    # Add context
+/context show                 # Show active contexts
+/context clear               # Clear all contexts
 ```
 
 ### Image Analysis
@@ -68,33 +86,33 @@ b explain this image
 
 Images without these triggers will be logged but not analyzed.
 
-### Voice Messages
-You can send voice messages in Greek and interact with them in two ways:
+### Voice Messages (Speech-to-Text)
+The bot automatically transcribes voice messages using Gemini 1.5 Flash:
 
-1. Get the transcription:
+1. **Get transcription only**:
 ```
 [Send voice message]
 [Reply with: ?, b, or bot]
--> Bot responds with the Greek transcription
+→ Bot responds with the transcription
 ```
 
-2. Get transcription and ask a question:
+2. **Get transcription and ask a question**:
 ```
 [Send voice message]
-[Reply with: "b what did they say about X?" or "bot explain what they meant"]
--> Bot responds with both the transcription and answers your question
+[Reply with: "b what did they say about X?"]
+→ Bot responds with transcription + answer
 ```
 
-Voice messages are processed using Vosk's offline Greek speech recognition model.
-The model files are automatically downloaded to the `models` directory on first run.
-
-### Context Management
-Use the `/context` command to manage conversation context:
-```bash
-/context be more technical     # Adds technical context
-/context show                  # Shows all active contexts
-/context clear                 # Clears all contexts
+### Text-to-Speech
+Convert any text message to speech:
 ```
+[Any text message]
+[Reply with: tts]
+→ Bot sends voice message with Greek pronunciation
+```
+
+Note: Greek voice handles both Greek (perfect) and English (with accent)
+
 
 ## Running the Bot
 
@@ -119,21 +137,39 @@ make docker-down
 
 ```
 telegram-bot-v2/
-├── app/
-│   ├── __init__.py
-│   ├── bot.py
-│   ├── brain.py
-│   ├── database.py
-│   ├── logger.py
-│   ├── telegram_handler.py
-│   └── voice_handler.py
-├── models/            # Speech recognition models (auto-downloaded)
-│   └── vosk-model-el-gr-0.7/
-├── Dockerfile
-├── docker-compose.yml
-├── Makefile
-└── README.md
+├── app/                      # Main application code
+│   ├── bot.py               # Entry point
+│   ├── brain.py             # Gemini AI integration
+│   ├── database.py          # SQLite message storage
+│   ├── logger.py            # Logging configuration
+│   ├── telegram_handler.py  # Telegram bot logic
+│   ├── voice_handler.py     # Speech-to-Text (Gemini)
+│   └── tts_handler.py       # Text-to-Speech (gTTS)
+├── database/                 # SQLite database files
+├── logs/                    # Application logs
+├── .env                     # Environment variables
+├── Dockerfile               # Docker configuration
+├── docker-compose.yml       # Docker Compose setup
+├── requirements.txt         # Python dependencies
+├── Pipfile                  # Pipenv configuration
+└── README.md               # This file
 ```
+
+## Key Technologies
+
+- **Gemini API**: Text generation, image analysis, speech transcription
+- **gTTS**: Text-to-speech synthesis (Greek voice)
+- **python-telegram-bot**: Telegram Bot API wrapper
+- **SQLite**: Message history storage
+- **Docker**: Containerized deployment
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather | Yes |
+| `GEMINI_API_KEY` | Google AI Studio API key | Yes |
+| `DB_PATH` | Database file path | No (default: `database/messages.db`) |
 
 ## Available Make Commands
 
@@ -141,6 +177,15 @@ telegram-bot-v2/
 - `make run` - Run the bot locally
 - `make docker-up` - Build and run with Docker Compose
 - `make docker-down` - Stop Docker services
+
+## Recent Updates
+
+- ✨ Replaced Vosk with Gemini 1.5 Flash for better speech-to-text
+- ✨ Added text-to-speech with gTTS (Greek voice)
+- 🔧 Simplified Docker image (removed ffmpeg, Vosk dependencies)
+- 🔧 Model switching between three Gemini variants
+- 🔧 Reply-based TTS interface (reply "tts" to any message)
+- 📁 Organized test files into `test/` directory
 
 ## License
 
