@@ -48,10 +48,17 @@ export DB_PATH='database/messages.db'
 
 ### Commands
 
+#### `/help` or `/start` - Show usage guide
+```
+/help         # Display comprehensive usage instructions
+/start        # Same as /help (standard Telegram bot convention)
+```
+
 #### `/b <query>` - Ask the bot anything
 ```
 /b What's the weather like today?
 /b Explain quantum computing
+/b            # Just check if bot is up
 ```
 
 #### `/model [number]` - Switch AI models
@@ -180,6 +187,7 @@ telegram-bot-v2/
 
 ## Recent Updates
 
+- ✨ Added `/help` command for comprehensive usage instructions
 - ✨ Replaced Vosk with Gemini 1.5 Flash for better speech-to-text
 - ✨ Added text-to-speech with gTTS (Greek voice)
 - 🔧 Simplified Docker image (removed ffmpeg, Vosk dependencies)
