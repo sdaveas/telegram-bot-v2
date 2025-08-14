@@ -1,75 +1,55 @@
 import os
-import tempfile
-from vosk import Model, KaldiRecognizer
-import json
-import subprocess
+import base64
+import google.generativeai as genai
 from .logger import setup_logger
 
 class VoiceHandler:
     def __init__(self):
-        """Initialize the voice handler with Vosk"""
+        """Initialize the voice handler with Gemini"""
         self.logger = setup_logger()
 
-        # Create models directory if it doesn't exist
-        os.makedirs('models', exist_ok=True)
+        # Configure Gemini API
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            self.logger.error("GEMINI_API_KEY environment variable is not set")
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
 
-        # Download Greek model if not already present
-        self.model_name = "vosk-model-el-gr-0.7"
-        self.model_path = os.path.join('models', self.model_name)
-        if not os.path.exists(self.model_path):
-            self.logger.info("Downloading Greek Vosk model...")
-            model_zip = os.path.join('models', f"{self.model_name}.zip")
-            subprocess.run(["wget", f"https://alphacephei.com/vosk/models/{self.model_name}.zip", "-O", model_zip])
-            subprocess.run(["unzip", model_zip, "-d", "models"])
-            subprocess.run(["rm", model_zip])
-        self.model = Model(self.model_path)
-        self.logger.info("Voice handler initialized with Vosk (Greek model)")
+        genai.configure(api_key=api_key)
+
+        # Use Gemini 1.5 Flash for audio transcription
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        self.logger.info("Voice handler initialized with Gemini 1.5 Flash")
 
     async def transcribe_voice(self, voice_bytes: bytes) -> str:
         """
-        Transcribe a voice message using Vosk
+        Transcribe a voice message using Gemini's multimodal capabilities
         """
         try:
-            # Save the voice message to a temporary file
-            with tempfile.NamedTemporaryFile(suffix='.ogg', delete=False) as temp_ogg:
-                temp_ogg.write(voice_bytes)
-                temp_ogg_path = temp_ogg.name
+            # Convert audio bytes to base64
+            audio_base64 = base64.b64encode(voice_bytes).decode('utf-8')
 
-            # Convert OGG to WAV using ffmpeg
-            temp_wav_path = temp_ogg_path + '.wav'
-            subprocess.run([
-                'ffmpeg', '-i', temp_ogg_path,
-                '-ar', '16000',  # Sample rate
-                '-ac', '1',      # Mono
-                '-f', 'wav',     # WAV format
-                temp_wav_path
-            ], capture_output=True)
+            # Create the prompt for transcription
+            prompt = """Please transcribe the following audio.
+            The audio contains Greek speech with some English technical terms.
+            Please preserve any English words exactly as spoken and transcribe the Greek text properly.
+            Return ONLY the transcription, no additional text or explanation."""
 
-            # Process with Greek model
-            with open(temp_wav_path, 'rb') as wav:
-                rec = KaldiRecognizer(self.model, 16000)
-                # Process audio in chunks
-                while True:
-                    data = wav.read(4000)
-                    if len(data) == 0:
-                        break
-                    rec.AcceptWaveform(data)
+            # Prepare the content with audio data
+            response = self.model.generate_content([
+                prompt,
+                {
+                    "mime_type": "audio/ogg",
+                    "data": audio_base64
+                }
+            ])
 
-                # Get final result
-                result = json.loads(rec.FinalResult())
-                transcript = result.get('text', '')
+            # Get the transcription
+            transcript = response.text.strip()
 
-            # Clean up temporary files
-            os.unlink(temp_ogg_path)
-            os.unlink(temp_wav_path)
-
-            self.logger.info(f"Successfully transcribed voice message: {transcript[:100]}...")
+            self.logger.info(f"Successfully transcribed voice message using Gemini: {transcript[:100]}...")
             return transcript
 
         except Exception as e:
-            self.logger.error(f"Error transcribing voice message: {str(e)}")
-            # Clean up temporary files if they exist
-            for path in [temp_ogg_path, temp_wav_path]:
-                if 'path' in locals() and os.path.exists(path):
-                    os.unlink(path)
-            raise e
+            self.logger.error(f"Error transcribing voice message with Gemini: {str(e)}")
+            # Fallback to empty string if transcription fails
+            return "Could not transcribe audio"
