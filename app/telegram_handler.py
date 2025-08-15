@@ -4,10 +4,11 @@ from .database import DatabaseHandler
 from .brain import BrainHandler
 from .voice_handler import VoiceHandler
 from .tts_handler import TTSHandler
+from .translate_handler import TranslateHandler
 from .logger import setup_logger
 
 class TelegramHandler:
-    def __init__(self, token: str, db_path: str = 'database/messages.db'):
+    def __init__(self, token: str, db_path: str = 'database/messages.db', translate_api_url: str = ''):
         self.bot_contexts = []
         self.logger = setup_logger()
         self.logger.info("Bot is running with detailed logging enabled.")
@@ -17,14 +18,21 @@ class TelegramHandler:
         self.brains = {}
         self.voice = VoiceHandler()
         self.tts = TTSHandler()
+        if translate_api_url == '':
+            self.logger.debug("No translation API URL provided.")
+        else:
+            self.logger.info(f"Translation API URL set to: {translate_api_url}")
+            self.translator = TranslateHandler(translate_api_url) if translate_api_url != '' else None
+            self.translate = False
 
         # Add handlers
         # Store message handler should come first to catch all messages
-        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.store_message, block=False))
+        self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.new_message, block=False))
         self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo, block=False))
         self.application.add_handler(MessageHandler(filters.VOICE, self.handle_voice, block=False))
         self.application.add_handler(CommandHandler("context", self.context_command))
         self.application.add_handler(CommandHandler("model", self.model_command))
+        self.application.add_handler(CommandHandler("translate", self.translate_command))
         self.application.add_handler(CommandHandler("b", self.bee_command))
         self.application.add_handler(CommandHandler("help", self.help_command))
         self.application.add_handler(CommandHandler("start", self.help_command))  # Same as help
@@ -39,6 +47,24 @@ class TelegramHandler:
             self.brains[chat_id] = BrainHandler(model_index)
 
         return self.brains[chat_id]
+
+    async def new_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Handle new incoming messages"""
+        await self.store_message(update, context)
+
+        if self.translator and self.translation_is_enabled(update.message.chat_id):
+            translated = await self.translator.translate(update.message.text, target_language="en")
+            self.logger.debug(f"Translation result: {translated}")
+            if translated and translated['source_language'] != translated['destination_language']:
+                await update.message.reply_text(translated['translated_text'])
+
+    def translation_is_enabled(self, chat_id: int) -> bool:
+        """Check if translation is enabled for the given chat_id"""
+        translate = self.db.get_setting(chat_id, 'translation_enabled', "off")
+        self.logger.debug(f"Checking translation setting for chat {chat_id} was {translate}")
+
+        return translate == "on" 
+        
 
     async def store_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Store incoming messages in the database and handle image analysis requests in replies"""
@@ -251,6 +277,36 @@ class TelegramHandler:
 
         self.logger.info(f"Generated response for {username}: {response[:100]}...")
         await update.message.reply_text(response)
+
+
+    async def translate_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """
+        Enables/disables translation for the chat.
+
+        if no text is provided, reply with a message asking for text to translate.
+
+        if text is 'on' or 'off', toggle the translation setting for the chat.
+
+        Otherwise replies with the expected command use.
+        """
+
+        translation = self.db.get_setting(update.message.chat_id, 'translation_enabled', "off")
+
+        self.logger.debug(f"Translation setting for chat {update.message.chat_id}: {translation}")
+
+        if not self.translator:
+            await update.message.reply_text("Translation API is not configured. Can't enable translation.")
+            return
+
+        text = " ".join(context.args)
+        if text == "on" or text == "off":
+            self.db.set_setting(update.message.chat_id, 'translation_enabled', text)
+            await update.message.reply_text(f"Translation is now {text}.")
+        else:
+            msg = f"Translation is currently {translation}."
+            msg += "\n\nUsage: /translate [on|off]"
+            await update.message.reply_text(msg)
+
 
     async def handle_photo(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle incoming photos"""
