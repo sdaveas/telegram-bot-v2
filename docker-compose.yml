@@ -13,6 +13,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - TRANSLATE_API_URL=${TRANSLATE_API_URL}
     restart: unless-stopped
+    network_mode: host
 
   dashboard:
     build:
