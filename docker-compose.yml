@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   telegram-bot:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     volumes:
       - ./database:/src/database
       - ./logs:/src/logs
@@ -11,3 +13,15 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - TRANSLATE_API_URL=${TRANSLATE_API_URL}
     restart: unless-stopped
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker.dashboard
+    volumes:
+      - ./database:/src/database:ro
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    depends_on:
+      - telegram-bot
