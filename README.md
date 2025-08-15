@@ -195,6 +195,9 @@ telegram-bot-v2/
 - 🔧 Reply-based TTS interface (reply "tts" to any message)
 - 📁 Organized test files into `test/` directory
 
+## Dashboard
+See [Dashboard](./README_DASHBOARD.md)
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
