@@ -15,9 +15,11 @@ def main():
     # Get optional environment variables
     db_path = os.getenv('DB_PATH', 'database/messages.db')
 
+    translate_api_url = os.getenv('TRANSLATE_API_URL', '')
+
     # Initialize and run the bot
     try:
-        bot = TelegramHandler(token, db_path=db_path)
+        bot = TelegramHandler(token, db_path=db_path, translate_api_url=translate_api_url)
         bot.run()
     except Exception as e:
         logger.error(f"Error running bot: {str(e)}", exc_info=True)

@@ -1,3 +1,4 @@
+aiohttp
 -i https://pypi.org/simple
 annotated-types==0.7.0; python_version >= '3.8'
 anyio==4.10.0; python_version >= '3.9'
