@@ -55,7 +55,7 @@ class TelegramHandler:
         if self.translator and self.translation_is_enabled(update.message.chat_id):
             translated = await self.translator.translate(update.message.text, target_language="en")
             self.logger.debug(f"Translation result: {translated}")
-            if translated:
+            if translated and translated['source_language'] is not translated['destination_language']:
                 await update.message.reply_text(translated['translated_text'])
 
     def translation_is_enabled(self, chat_id: int) -> bool:
