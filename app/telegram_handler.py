@@ -334,6 +334,7 @@ class TelegramHandler:
         if not (caption_lower == 'b' or caption_lower == 'bot' or
                 caption_lower.startswith('b ') or caption_lower.startswith('bot ')):
             self.logger.info("Skipping photo analysis - caption must be 'b'/'bot' or start with 'b '/'bot '")
+            await update.message.set_reaction([])
             return
 
         # Set query - use a default when caption is just 'b' or 'bot'
