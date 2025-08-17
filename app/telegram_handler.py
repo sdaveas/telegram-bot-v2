@@ -266,7 +266,7 @@ class TelegramHandler:
         # Process the query with the brain
         brain = self.get_brain(chat_id)
         system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
-        response = brain.process(query, recent_messages, system_prompt)
+        response = brain.process(command_text, recent_messages, system_prompt)
 
         # Store the bot's response
         self.db.store_message(
