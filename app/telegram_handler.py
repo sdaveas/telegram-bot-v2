@@ -278,7 +278,11 @@ class TelegramHandler:
         )
 
         self.logger.info(f"Generated response for {username}: {response[:100]}...")
-        await update.message.reply_text(response)
+        try:
+            await update.message.reply_text(response)
+        except Exception as e:
+            self.logger.error(f"Error sending message: {e}")
+            await update.message.set_reaction("👎")
         await update.message.set_reaction([])
 
     async def translate_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -297,13 +301,14 @@ class TelegramHandler:
         self.logger.debug(f"Translation setting for chat {update.message.chat_id}: {translation}")
 
         if not self.translator:
+            await update.message.set_reaction("👎")
             await update.message.reply_text("Translation API is not configured. Can't enable translation.")
             return
 
         text = " ".join(context.args)
         if text == "on" or text == "off":
             self.db.set_setting(update.message.chat_id, 'translation_enabled', text)
-            await update.message.reply_text(f"Translation is now {text}.")
+            await update.message.set_reaction("👍")
         else:
             msg = f"Translation is currently {translation}."
             msg += "\n\nUsage: /translate [on|off]"
@@ -315,8 +320,6 @@ class TelegramHandler:
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
         caption = update.message.caption or ""
-
-        await update.message.set_reaction([ReactionTypeEmoji("👀")])
 
         self.logger.info(f"Received photo from {username} (chat_id: {chat_id}) with caption: {caption}")
 
@@ -336,6 +339,8 @@ class TelegramHandler:
             self.logger.info("Skipping photo analysis - caption must be 'b'/'bot' or start with 'b '/'bot '")
             await update.message.set_reaction([])
             return
+
+        await update.message.set_reaction([ReactionTypeEmoji("👀")])
 
         # Set query - use a default when caption is just 'b' or 'bot'
         if caption_lower == 'b' or caption_lower == 'bot':
@@ -443,8 +448,6 @@ class TelegramHandler:
         chat_id = update.effective_chat.id
 
         try:
-            await update.message.set_reaction("👀")
-
             if not context.args:
                 # List available models with current one marked
                 models = []
