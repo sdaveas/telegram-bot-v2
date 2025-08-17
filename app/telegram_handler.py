@@ -315,6 +315,8 @@ class TelegramHandler:
         username = update.effective_user.username or update.effective_user.first_name
         caption = update.message.caption or ""
 
+        await update.message.set_reaction([ReactionTypeEmoji("👀")])
+
         self.logger.info(f"Received photo from {username} (chat_id: {chat_id}) with caption: {caption}")
 
         # Store that we received a photo regardless of processing
@@ -373,11 +375,14 @@ class TelegramHandler:
 
         self.logger.info(f"Generated response for photo: {response[:100]}...")
         await update.message.reply_text(response)
+        await update.message.set_reaction([])
 
     async def handle_voice(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle voice messages"""
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
+
+        await update.message.set_reaction([ReactionTypeEmoji("👀")])
 
         self.logger.info(f"Received voice message from {username} (chat_id: {chat_id})")
 
@@ -390,6 +395,8 @@ class TelegramHandler:
             message_text="[Voice message]",
             timestamp=update.message.date
         )
+
+        await update.message.set_reaction([])
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /help command to display bot usage instructions"""
