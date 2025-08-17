@@ -1,4 +1,4 @@
-from telegram import Update
+from telegram import Update, ReactionTypeEmoji
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 from .database import DatabaseHandler
 from .brain import BrainHandler
@@ -200,6 +200,7 @@ class TelegramHandler:
 
     async def context_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /context command to set the bot's behavior"""
+
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
         new_context = " ".join(context.args) if context.args else ""
@@ -207,13 +208,20 @@ class TelegramHandler:
         self.logger.info(f"Received /context command from {username} (chat_id: {chat_id}). Context: {new_context}")
 
         if not new_context:
-            await update.message.reply_text("Please provide a context setting, e.g., be less verbose")
+            text = "Please provide a context instruction.\n\nUsage: /context <instruction>\n"
+            text += "Examples:\n"
+            text += "/context be more concise - sets the context\n"
+            text += "/context show\n"
+            text += "/context clear"
+            await update.message.reply_text(text)
+            await update.message.set_reaction([])
             return
+
+        await update.message.set_reaction("👀")
 
         # Handle context commands
         if new_context.lower() == "clear":
             self.bot_contexts = []
-            await update.message.reply_text("All contexts cleared.")
         elif new_context.lower() == "show":
             if not self.bot_contexts:
                 await update.message.reply_text("No active contexts.")
@@ -223,17 +231,8 @@ class TelegramHandler:
         else:
             # Add new context
             self.bot_contexts.append(new_context)
-            await update.message.reply_text(f"Added context: {new_context}")
 
-        # Store the context as a message
-        context_text = f"{username}: /context {new_context}"
-        self.db.store_message(
-            chat_id=chat_id,
-            user_id=-1,
-            username="command",
-            message_text=context_text,
-            timestamp=update.message.date
-        )
+        await update.message.set_reaction("👍")
 
     async def bee_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /b command"""
@@ -246,6 +245,8 @@ class TelegramHandler:
         if not query:
             await update.message.reply_text("I'm up. What's up?")
             return
+
+        await update.message.set_reaction("👀")
 
         # Get recent messages from database
         recent_messages = self.db.get_recent_messages(chat_id)
@@ -277,7 +278,7 @@ class TelegramHandler:
 
         self.logger.info(f"Generated response for {username}: {response[:100]}...")
         await update.message.reply_text(response)
-
+        await update.message.set_reaction([])
 
     async def translate_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """
@@ -431,9 +432,10 @@ class TelegramHandler:
     async def model_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /model command to select or view available models"""
         chat_id = update.effective_chat.id
-        username = update.effective_user.username or update.effective_user.first_name
 
         try:
+            await update.message.set_reaction("👀")
+
             if not context.args:
                 # List available models with current one marked
                 models = []
@@ -443,6 +445,9 @@ class TelegramHandler:
                     models.append(f"{idx}. {name} {marker}")
                 models_text = "\n".join(models)
                 await update.message.reply_text(f"Available models:\n{models_text}\n\nUse /model <number> to select a model")
+
+                await update.message.set_reaction([])
+
                 return
 
             # Parse model index
@@ -451,6 +456,8 @@ class TelegramHandler:
             except ValueError:
                 await update.message.reply_text("Please provide a valid model number (1-3)")
                 return
+        
+            await update.message.set_reaction("👀")
 
             # Validate and switch model
             if model_index not in BrainHandler.AVAILABLE_MODELS:
@@ -460,26 +467,16 @@ class TelegramHandler:
             # Initialize or update brain for this chat with the selected model
             brain = BrainHandler(model_index)
             self.brains[chat_id] = brain
-            model_name = BrainHandler.AVAILABLE_MODELS[model_index]
             # Store the selected model index for this chat
             self.db.set_setting(chat_id, 'model_index', str(model_index))
 
-            await update.message.reply_text(f"Switched to model: {model_name}")
-
-            # Store the command
-            command_text = f"{username}: /model {model_index}"
-            self.db.store_message(
-                chat_id=chat_id,
-                user_id=-1,  # Special ID for command
-                username="command",
-                message_text=command_text,
-                timestamp=update.message.date
-            )
+            await update.message.set_reaction("👍")
 
         except Exception as e:
             error_msg = f"Error switching model: {str(e)}"
             self.logger.error(error_msg)
             await update.message.reply_text(error_msg)
+            await update.message.set_reaction("👎")
 
     def run(self):
         """Run the bot"""
