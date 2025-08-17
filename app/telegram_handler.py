@@ -105,23 +105,24 @@ class TelegramHandler:
 
                 try:
                     # Generate speech with Greek voice (handles both Greek and English)
-                    await message.reply_text("🔊 Generating speech...")
+                    await update.message.set_reaction("👀")
                     audio_bytes = await self.tts.generate_speech(text_to_speak)
 
                     if audio_bytes:
                         # Send as voice message
-                        await message.reply_voice(
-                            voice=audio_bytes,
-                            caption=f"🔊 TTS: {text_to_speak[:100]}{'...' if len(text_to_speak) > 100 else ''}"
-                        )
+                        await message.reply_voice(voice=audio_bytes)
                         self.logger.info(f"Successfully sent TTS audio")
+                        await update.message.set_reaction([])
                     else:
                         await message.reply_text(
                             "Sorry, I couldn't generate speech for that text."
                         )
+                        await update.message.set_reaction("👎")
+
                 except Exception as e:
                     error_msg = f"Error generating speech: {str(e)}"
                     self.logger.error(error_msg)
+                    await update.message.set_reaction("👎")
                     await message.reply_text(f"Sorry, an error occurred: {error_msg}")
 
                 return  # Exit early after handling TTS
