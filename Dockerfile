@@ -23,4 +23,4 @@ RUN mkdir -p /src/database /src/logs /src/files
 ENV PYTHONPATH=/src
 
 # Set the default command
-CMD ["python", "-m", "app.bot"]
+CMD ["python", "-m", "app.app"]

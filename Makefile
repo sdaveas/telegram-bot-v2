@@ -2,7 +2,7 @@
 
 # Run the bot locally using pipenv
 run:
-	pipenv run python -m app.bot
+	pipenv run python -m app.app
 
 # Build and run with Docker Compose
 docker-up:

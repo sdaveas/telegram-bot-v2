@@ -1,7 +1,7 @@
 import os
 import base64
 import google.generativeai as genai
-from .logger import setup_logger
+from app.logger import setup_logger
 
 class VoiceHandler:
     def __init__(self):

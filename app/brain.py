@@ -40,6 +40,7 @@ class BrainHandler:
             self.logger.error(f"Failed to initialize model {self.model_name}: {str(e)}")
             raise
         self.logger.info(f"Brain initialized with Gemini model {self.model_name}")
+
     def process(self, query: str, recent_messages: List[Dict], system_prompt: str = "") -> str:
         """Process a query with context from recent messages"""
         # Format recent messages as context

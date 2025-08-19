@@ -2,7 +2,7 @@ import os
 import tempfile
 from typing import Optional
 from gtts import gTTS
-from .logger import setup_logger
+from app.logger import setup_logger
 
 class TTSHandler:
     def __init__(self):
