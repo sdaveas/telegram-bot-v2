@@ -1,11 +1,12 @@
 from telegram import Update, ReactionTypeEmoji
-from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
+from telegram.ext import Application, CommandHandler, MessageHandler, MessageReactionHandler, ContextTypes, filters, TypeHandler
 from .database import DatabaseHandler
 from .brain import BrainHandler
 from .voice_handler import VoiceHandler
 from .tts_handler import TTSHandler
 from .translate_handler import TranslateHandler
 from .logger import setup_logger
+import os
 
 class TelegramHandler:
     def __init__(self, token: str, db_path: str = 'database/messages.db', translate_api_url: str = ''):
@@ -30,12 +31,94 @@ class TelegramHandler:
         self.application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, self.new_message, block=False))
         self.application.add_handler(MessageHandler(filters.PHOTO, self.handle_photo, block=False))
         self.application.add_handler(MessageHandler(filters.VOICE, self.handle_voice, block=False))
+
         self.application.add_handler(CommandHandler("context", self.context_command))
         self.application.add_handler(CommandHandler("model", self.model_command))
         self.application.add_handler(CommandHandler("translate", self.translate_command))
         self.application.add_handler(CommandHandler("b", self.bee_command))
         self.application.add_handler(CommandHandler("help", self.help_command))
         self.application.add_handler(CommandHandler("start", self.help_command))  # Same as help
+
+        # why doesn't this work?
+        # self.application.add_handler(MessageReactionHandler(self.reaction_handler))
+        self.application.add_handler(TypeHandler(Update, self.reaction_handler))
+
+    categories = ["photo", "voice"]
+
+    def get_file_path(self, category: str, chat_id: int, message_id: int) -> str:
+        return f"files/{category}/{chat_id}/{message_id}"
+
+    def store_file(self, file_path: str, file_data: bytes):
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        with open(file_path, 'wb') as f:
+            f.write(file_data)
+
+    def load_file(self, file_path: str) -> bytes:
+        with open(file_path, 'rb') as f:
+            return f.read()
+
+    def try_get_file(self, chat_id: int, message_id: int) -> (str, str):
+        for category in self.categories:
+            file_path = self.get_file_path(category, chat_id, message_id)
+            try:
+                return self.load_file(file_path), category
+            except FileNotFoundError:
+                self.logger.warning(f"File {file_path} not found")
+
+        self.logger.warning(f"No file found for chat_id {chat_id}, message_id {message_id} in any category")
+        return None, ""
+
+    async def reaction_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        self.logger.info(f"Received update: {update}")
+
+        reaction = update.message_reaction.new_reaction
+        self.logger.info(f"Reaction: {reaction}")
+
+        self.logger.info(f"Update: {update}")
+        self.logger.info(f"Contract: {context}")
+
+        if update.message_reaction.new_reaction != (ReactionTypeEmoji("👾"),):
+            self.logger.info(f"don't handle reaction {update.message_reaction}")
+            return
+
+        file, category = self.try_get_file(update.effective_chat.id, update.message_reaction.message_id)
+
+        if category not in self.categories:
+            self.logger.warning(f"Unknown category [{category}] for file {file}")
+            await context.bot.set_message_reaction(
+                chat_id=update.effective_chat.id,
+                message_id=update.message_reaction.message_id,
+                reaction=[ReactionTypeEmoji("🤷‍♂️")]
+            )
+
+            return
+
+        self.logger.info(f"Skipping reaction handling for category {category}")
+        await context.bot.set_message_reaction(
+            chat_id=update.effective_chat.id,
+            message_id=update.message_reaction.message_id,
+            reaction=[ReactionTypeEmoji("👀")]
+        )
+
+        if category == "photo":
+            self.logger.info(f"Processing photo reaction for message ID {update.message_reaction.message_id}")
+            brain = self.get_brain(update.effective_chat.id)
+            response = await brain.process_image(file, "Explain this image", "")
+        elif category == "voice":
+            self.logger.info(f"Processing voice reaction for message ID {update.message_reaction.message_id}")
+            response = await self.voice.transcribe_voice(file)
+
+        await context.bot.send_message(
+            chat_id=update.effective_chat.id,
+            text=response,
+            reply_to_message_id=update.message_reaction.message_id
+        )
+
+        await context.bot.set_message_reaction(
+            chat_id=update.effective_chat.id,
+            message_id=update.message_reaction.message_id,
+            reaction=[]
+        )
 
         self.logger.info("Telegram bot initialized")
 
@@ -65,7 +148,6 @@ class TelegramHandler:
 
         return translate == "on" 
         
-
     async def store_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Store incoming messages in the database and handle image analysis requests in replies"""
         self.logger.info(f"Received update: {update}")
@@ -91,6 +173,15 @@ class TelegramHandler:
             message_text=message.text,
             timestamp=message.date
         )
+
+        if message.voice:
+            # Get the voice message
+            voice = message.voice
+            # Download the voice message
+            voice_file = await context.bot.get_file(voice.file_id)
+            voice_bytes = await voice_file.download_as_bytearray()
+            file_path = self.get_file_path("voice", message.chat_id, message.message_id)
+            self.store_file(file_path, voice_bytes)
 
         # Check if this is a reply to another message
         if message.reply_to_message:
@@ -143,7 +234,7 @@ class TelegramHandler:
 
                 # Process the photo with the brain
                 system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
-                brain = self.get_brain(chat_id)
+                brain = self.get_brain(message.chat_id)
                 response = await brain.process_image(photo_bytes, query, system_prompt)
 
                 # Store the bot's response
@@ -332,12 +423,21 @@ class TelegramHandler:
             timestamp=update.message.date
         )
 
+        self.logger.info(f"Photo sizes: {[photo.file_size for photo in update.message.photo]}")
+        # Get the largest photo size
+        photo = update.message.photo[-1]
+        # Download the photo
+        photo_file = await context.bot.get_file(photo.file_id)
+        photo_bytes = await photo_file.download_as_bytearray()
+        file_path = self.get_file_path("photo", update.message.chat_id, update.message.message_id)
+        self.store_file(file_path, photo_bytes)
+
+
         # Only process if caption is 'b'/'bot' or starts with 'b '/'bot '
         caption_lower = caption.lower().strip()
         if not (caption_lower == 'b' or caption_lower == 'bot' or
                 caption_lower.startswith('b ') or caption_lower.startswith('bot ')):
             self.logger.info("Skipping photo analysis - caption must be 'b'/'bot' or start with 'b '/'bot '")
-            await update.message.set_reaction([])
             return
 
         await update.message.set_reaction([ReactionTypeEmoji("👀")])
@@ -389,21 +489,14 @@ class TelegramHandler:
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
 
-        await update.message.set_reaction([ReactionTypeEmoji("👀")])
+        voice = update.message.voice
+        voice_file = await context.bot.get_file(voice.file_id)
+        voice_bytes = await voice_file.download_as_bytearray()
+
+        file_path = self.get_file_path("voice", chat_id, update.message.message_id)
+        self.store_file(file_path, voice_bytes)
 
         self.logger.info(f"Received voice message from {username} (chat_id: {chat_id})")
-
-        # Just log that we received a voice message (no response to the user)
-        self.logger.info("Voice message stored in chat history")
-        self.db.store_message(
-            chat_id=chat_id,
-            user_id=update.effective_user.id,
-            username=username,
-            message_text="[Voice message]",
-            timestamp=update.message.date
-        )
-
-        await update.message.set_reaction([])
 
     async def help_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Handle the /help command to display bot usage instructions"""
@@ -493,4 +586,24 @@ class TelegramHandler:
     def run(self):
         """Run the bot"""
         self.logger.info("Bot is starting...")
-        self.application.run_polling()
+        self.application.run_polling(
+            allowed_updates=[
+                "message",
+                "edited_message",
+                "channel_post",
+                "edited_channel_post",
+                "message_reaction",
+                "message_reaction_count",
+                "inline_query",
+                "chosen_inline_result",
+                "callback_query",
+                "shipping_query",
+                "pre_checkout_query",
+                "poll",
+                "poll_answer",
+                "my_chat_member",
+                "chat_member",
+                "chat_join_request"
+            ],
+            drop_pending_updates=False  # Don't drop updates
+        )

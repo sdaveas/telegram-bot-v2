@@ -5,9 +5,7 @@ models/
 Pipfile.lock
 __pycache__
 logs/
-database/*.db
+database/
 
-# Test output files
-test/*.mp3
-test/*.ogg
-test/*.wav
+# temporary stored files per chat
+files/

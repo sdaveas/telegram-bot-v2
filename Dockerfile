@@ -17,7 +17,7 @@ RUN pip install -r requirements.txt
 COPY app/ /src/app/
 
 # Create directories for database and logs
-RUN mkdir -p /src/database /src/logs
+RUN mkdir -p /src/database /src/logs /src/files
 
 # Add src directory to Python path
 ENV PYTHONPATH=/src
