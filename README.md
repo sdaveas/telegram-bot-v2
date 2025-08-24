@@ -9,12 +9,13 @@ A Python-based Telegram bot with advanced AI capabilities, powered by Google's G
 - Docker and Docker Compose (optional, for containerized deployment)
 - Telegram Bot Token (from @BotFather)
 - Gemini API Key
+- (optional) [Translate API](https://github.com/sdaveas/translate-api)
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/sdaveas/telegram-bot-v2
 cd telegram-bot-v2
 ```
 
@@ -28,9 +29,10 @@ make install
 # Required environment variables
 export TELEGRAM_BOT_TOKEN='your_bot_token_here'
 export GEMINI_API_KEY='your_gemini_api_key_here'
+export DB_PATH='database/messages.db'
 
 # Optional environment variables
-export DB_PATH='database/messages.db'
+export TRANSLATE_API_URL='your_translate_API_url_here' # e.g. 'http://localhost:5001'
 ```
 
 ## Features
@@ -43,6 +45,7 @@ export DB_PATH='database/messages.db'
 - **Context Management**: Maintain conversation context across messages
 - **Message History**: SQLite database for conversation tracking
 - **Model Switching**: Change between different Gemini models on the fly
+- **Translation**: Use `/translate on` to automatically translate messages from any language to english 
 
 ## Usage
 
@@ -74,6 +77,13 @@ export DB_PATH='database/messages.db'
 /context be more technical    # Add context
 /context show                 # Show active contexts
 /context clear               # Clear all contexts
+```
+
+#### `/translate <option>` - Enable/Disable automated translation
+```
+/translate       # returns translation status
+/translate on    # enables translation
+/translate off   # disables translation
 ```
 
 ### Image Analysis
@@ -176,7 +186,8 @@ telegram-bot-v2/
 |----------|-------------|----------|
 | `TELEGRAM_BOT_TOKEN` | Bot token from @BotFather | Yes |
 | `GEMINI_API_KEY` | Google AI Studio API key | Yes |
-| `DB_PATH` | Database file path | No (default: `database/messages.db`) |
+| `DB_PATH` | Database file path | Yes (default: `database/messages.db`) |
+| `TRANSLATE_API_URL` | Points to [Translate API](https://github.com/sdaveas/translate-api) url | No |
 
 ## Available Make Commands
 
