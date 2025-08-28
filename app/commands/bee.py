@@ -36,6 +36,14 @@ class Bee:
         await self.send_response(response, update)
         await update.message.set_reaction([])
 
+        self.db.store_message(
+            chat_id=chat_id,
+            user_id=self.bot.bot_id,
+            username="bot",
+            message_text=response,
+            timestamp=update.message.date
+        )
+
     async def send_response(self, response: str, update: Update): 
         try:
             await update.message.reply_markdown(response)
