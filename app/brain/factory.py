@@ -1,14 +1,23 @@
 
 
+
 from .gemini import GeminiBrainHandler
 from .openai import OpenAIBrainHandler
 from .deepseek import DeepseekBrainHandler
+from .noop import NoopBrainHandler
 
-_BACKENDS = {
-    "GEMINI": GeminiBrainHandler,
-    "OPENAI": OpenAIBrainHandler,
-    "DEEPSEEK": DeepseekBrainHandler,
-}
+import os
+_BACKENDS = {}
+_BACKEND_CONFIG = [
+    ("GEMINI", GeminiBrainHandler, "GEMINI_API_KEY"),
+    ("OPENAI", OpenAIBrainHandler, "OPENAI_API_KEY"),
+    ("DEEPSEEK", DeepseekBrainHandler, "DEEPSEEK_API_KEY"),
+]
+for name, handler, env_key in _BACKEND_CONFIG:
+    if os.getenv(env_key):
+        _BACKENDS[name] = handler
+    else:
+        _BACKENDS[name] = lambda *args, name=name: NoopBrainHandler(name)
 
 def available_backends():
     """Return a list of available backend names."""
