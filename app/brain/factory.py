@@ -1,10 +1,13 @@
 
+
 from .gemini import GeminiBrainHandler
 from .openai import OpenAIBrainHandler
+from .deepseek import DeepseekBrainHandler
 
 _BACKENDS = {
     "GEMINI": GeminiBrainHandler,
     "OPENAI": OpenAIBrainHandler,
+    "DEEPSEEK": DeepseekBrainHandler,
 }
 
 def available_backends():
