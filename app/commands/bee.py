@@ -31,10 +31,13 @@ class Bee:
         brain = self.get_brain(chat_id)
         system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
         response = brain.process(command_text, recent_messages, system_prompt)
-        self.logger.info(f"Generated response for {username}: {response[:100]}...")
+        self.logger.info(f"Generated response for {username}: {response}...")
+        
+        return await self.send_response(response, update)
+
+    async def send_response(self, response: str, update: Update): 
         try:
-            await update.message.reply_text(response)
+            await update.message.reply_markdown(response)
         except Exception as e:
             self.logger.error(f"Error sending message: {e}")
-            await update.message.set_reaction("👎")
-        await update.message.set_reaction([])
+            await update.message.reply_text(response)

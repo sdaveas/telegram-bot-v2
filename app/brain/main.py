@@ -47,7 +47,7 @@ def main():
     except Exception as e:
         print(f"Failed to load backend '{backend}' with model '{model}': {e}")
         sys.exit(1)
-    print(f"Loaded brain: {type(brain).__name__} (model: {getattr(brain, 'current_model', None)})")
+    print(f"Loaded brain: {type(brain).__name__} (model: {getattr(brain, 'model_name', None)})")
     print("Type 'exit' to quit.")
     while True:
         prompt = input("You: ")

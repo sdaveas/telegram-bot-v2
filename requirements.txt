@@ -6,13 +6,17 @@ cachetools==5.5.2; python_version >= '3.7'
 certifi==2025.8.3; python_version >= '3.7'
 cffi==1.17.1; python_version >= '3.8'
 charset-normalizer==3.4.3; python_version >= '3.7'
-google-ai-generativelanguage==0.6.15; python_version >= '3.7'
-google-api-core[grpc]==2.25.1; python_version >= '3.7'
-google-api-python-client==2.178.0; python_version >= '3.7'
-google-auth==2.40.3; python_version >= '3.7'
+google==3.0.0
+google-ai-generativelanguage==0.6.15
+google-api-core==2.25.1
+google-api-python-client==2.179.0
+google-auth==2.40.3
 google-auth-httplib2==0.2.0
-google-generativeai==0.8.5; python_version >= '3.9'
-googleapis-common-protos==1.70.0; python_version >= '3.7'
+google-cloud-speech==2.33.0
+google-cloud-vision==3.10.2
+google-genai==1.32.0
+google-generativeai==0.8.5
+googleapis-common-protos==1.70.0
 gtts==2.5.1
 grpcio==1.74.0; python_version >= '3.9'
 grpcio-status==1.71.2; python_version >= '3.9'
