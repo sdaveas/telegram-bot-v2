@@ -22,11 +22,15 @@ class ReactionHandler:
         file, category = try_get_file(update.effective_chat.id, update.message_reaction.message_id)
         if category not in self.categories:
             self.logger.warning(f"Unknown category [{category}] for file {file}")
-            await context.bot.set_message_reaction(
-                chat_id=update.effective_chat.id,
-                message_id=update.message_reaction.message_id,
-                reaction=[ReactionTypeEmoji("🤷‍♂️")]
-            )
+            try:
+                await context.bot.set_message_reaction(
+                    chat_id=update.effective_chat.id,
+                    message_id=update.message_reaction.message_id,
+                    reaction=[ReactionTypeEmoji("🤷‍♂️")]
+                )
+            except Exception as e:
+                self.logger.error(f"Error setting reaction: {e}")
+
             self.logger.info(f"Skipping reaction handling for category {category}")
             return
 

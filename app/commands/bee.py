@@ -31,13 +31,6 @@ class Bee:
         brain = self.get_brain(chat_id)
         system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
         response = brain.process(command_text, recent_messages, system_prompt)
-        self.db.store_message(
-            chat_id=chat_id,
-            user_id=self.bot.application.bot.id,
-            username=self.bot.application.bot.username or "Bot",
-            message_text=response,
-            timestamp=update.message.date
-        )
         self.logger.info(f"Generated response for {username}: {response[:100]}...")
         try:
             await update.message.reply_text(response)

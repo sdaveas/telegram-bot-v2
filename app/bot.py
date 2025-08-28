@@ -11,7 +11,7 @@ from app.commands.help import Help
 from app.commands.model import Model
 from app.logger import setup_logger
 from app.database import DatabaseHandler
-from app.brain import BrainHandler
+from app.brain.factory import get_brain_handler, available_backends
 from app.handlers.tts import TTSHandler
 from app.handlers.translate import TranslateHandler
 from telegram.ext import Application, CommandHandler, MessageHandler as TGMessageHandler, MessageReactionHandler, filters
@@ -47,10 +47,14 @@ class Bot:
 
         self.application.add_handler(MessageReactionHandler(ReactionHandler(self)))
 
-    def get_brain(self, chat_id: int) -> BrainHandler:
+    def get_brain(self, chat_id: int):
         if chat_id not in self.brain:
-            model_index = int(self.db.get_setting(chat_id, 'model_index', 1))
-            self.brain[chat_id] = BrainHandler(model_index)
+            backend = self.db.get_setting(chat_id, 'backend', None)
+            model = self.db.get_setting(chat_id, 'model', None)
+            # If not set, default to first available backend and its default model
+            if backend is None:
+                backend = available_backends()[0]
+            self.brain[chat_id] = get_brain_handler(backend, model)
         return self.brain[chat_id]
 
     def translation_is_enabled(self, chat_id: int) -> bool:
