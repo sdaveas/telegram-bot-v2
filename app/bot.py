@@ -49,11 +49,8 @@ class Bot:
 
     def get_brain(self, chat_id: int):
         if chat_id not in self.brain:
-            backend = self.db.get_setting(chat_id, 'backend', None)
-            model = self.db.get_setting(chat_id, 'model', None)
-            # If not set, default to first available backend and its default model
-            if backend is None:
-                backend = available_backends()[0]
+            backend = self.db.get_setting(chat_id, 'backend', available_backends()[0])
+            model = self.db.get_setting(chat_id, 'model', backend.get_models()[0])
             self.brain[chat_id] = get_brain_handler(backend, model)
         return self.brain[chat_id]
 
