@@ -33,7 +33,8 @@ class Bee:
         response = brain.process(command_text, recent_messages, system_prompt)
         self.logger.info(f"Generated response for {username}: {response}...")
         
-        return await self.send_response(response, update)
+        await self.send_response(response, update)
+        await update.message.set_reaction([])
 
     async def send_response(self, response: str, update: Update): 
         try:
