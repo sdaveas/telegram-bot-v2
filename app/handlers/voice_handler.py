@@ -17,8 +17,8 @@ class VoiceHandler:
         genai.configure(api_key=api_key)
 
         # Use Gemini 1.5 Flash for audio transcription
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
-        self.logger.info("Voice handler initialized with Gemini 1.5 Flash")
+        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        self.logger.info("Voice handler initialized with Gemini 2.5 Flash")
 
     async def transcribe_voice(self, voice_bytes: bytes) -> str:
         """
