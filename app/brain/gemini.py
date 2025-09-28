@@ -87,8 +87,14 @@ class GeminiBrainHandler:
         if not messages:
             return "No recent messages."
         context = []
-        for msg in reversed(messages):
-            context.append(f"{msg['username']}: {msg['message_text']}")
+        if isinstance(messages, str):
+            return messages
+        if isinstance(messages, list):
+            for msg in reversed(messages):
+                if isinstance(msg, dict):
+                    context.append(f"{msg.get('username', 'User')}: {msg.get('message_text', '')}")
+                else:
+                    context.append(str(msg))
         return "\n".join(context)
 
     def _format_prompt(self, prompt, context, system_prompt):
