@@ -1,4 +1,6 @@
 import os
+import re
+
 from typing import Tuple, Optional
 
 def get_file_path(category: str, chat_id: int, message_id: int) -> str:
@@ -21,4 +23,24 @@ def try_get_file(chat_id: int, message_id: int, categories=("photo", "voice")) -
         except FileNotFoundError:
             pass
     return None, ""
+
+def contains_laughter(text: str) -> bool:
+    """
+    Detect if a text message contains basic laughter expressions.
+    Returns True if laughter is detected, False otherwise.
+    """
+    laughter_patterns = [
+        # Basic patterns with repeating 'a'
+        r'[ax]a{2,}',  # xaa, axa, xaaa, etc.
+        r'[χα]α{2,}',  # χαα, αχα, χααα, etc.
+        r'[ah]a{2,}',  # haa, aha, haaa, etc.
+
+        # Alternating patterns
+        r'[ax][ax]+a',  # xaxa, axax, xaxxa, etc.
+        r'[χα][χα]+α',  # χαχα, αχαχ, χαχχα, etc.
+        r'[ah][ah]+a',  # haha, ahah, hahha, etc.
+    ]
+
+    combined_pattern = '|'.join(laughter_patterns)
+    return bool(re.search(combined_pattern, text.lower()))
 
