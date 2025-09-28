@@ -5,7 +5,6 @@ from app.handlers.utils import get_file_path, load_file
 
 class ReplyHandler:
     def __init__(self, bot):
-        self.bot_contexts = bot.bot_contexts
         self.logger = bot.logger
         self.db = bot.db
         self.get_brain = bot.get_brain
@@ -17,9 +16,11 @@ class ReplyHandler:
         user_id = update.message.from_user.id
         username = update.message.from_user.username
         text = update.message.text
+        date = update.message.date
+        message_id = update.message.message_id
 
-        self.logger.info(f"Storing reply from user {username} in chat {chat_id}: {text}")
-        self.db.store_message(chat_id, user_id, username, text, update.message.date)
+        self.logger.info(f"Storing reply from user {username} in chat {chat_id}/{message_id}: {text}")
+        self.db.store_message(chat_id, user_id, username, text, date, message_id=message_id)
 
         reply = self.get_reply_to_bot(text, context)
         if not reply:
@@ -34,7 +35,10 @@ class ReplyHandler:
             file = load_file(file_path)
 
             brain = self.get_brain(update.effective_chat.id)
-            response = await brain.process_image(file, text, self.bot_contexts)
+            context_setting = self.db.get_setting(chat_id, "context", "")
+            contexts = context_setting.split("\n") if context_setting else []
+            system_prompt = "\n".join([f"System: {ctx}" for ctx in contexts]) + "\n" if contexts else ""
+            response = await brain.process_image(file, text, system_prompt)
         elif update.message.reply_to_message.voice:
             file_path = get_file_path("voice", chat_id, update.message.reply_to_message.message_id)
             file = load_file(file_path)
@@ -42,7 +46,10 @@ class ReplyHandler:
             self.logger.info(f"Processing voice reply for message ID {update.message.reply_to_message.message_id}")
             transcription = await self.voice.transcribe_voice(file)
             brain = self.get_brain(update.effective_chat.id)
-            response = brain.process("here's a transcription " + transcription + " and here's the query: " + text, self.bot_contexts)
+            context_setting = self.db.get_setting(chat_id, "context", "")
+            contexts = context_setting.split("\n") if context_setting else []
+            system_prompt = "\n".join([f"System: {ctx}" for ctx in contexts]) + "\n" if contexts else ""
+            response = brain.process("here's a transcription " + transcription + " and here's the query: " + text, system_prompt)
         elif reply == "tts":
             text = update.message.reply_to_message.text
             speech = await self.tts.generate_speech(text)

@@ -18,7 +18,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler as TGMessag
 
 class Bot:
     def __init__(self, token: str, db_path: str = 'database/messages.db', translate_api_url: str = ''):
-        self.bot_contexts = []
         self.logger = setup_logger()
         self.logger.info("Bot is running with detailed logging enabled.")
         self.application = Application.builder().token(token).build()

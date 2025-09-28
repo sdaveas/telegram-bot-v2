@@ -5,7 +5,7 @@ class Context:
     def __init__(self, bot):
         self.bot = bot
         self.logger = bot.logger
-        self.bot_contexts = bot.bot_contexts
+        self.db = bot.db
 
     async def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
@@ -22,13 +22,19 @@ class Context:
             return
         await update.message.set_reaction("👀")
         if new_context.lower() == "clear":
-            self.bot_contexts = []
+            self.db.set_setting(chat_id, "context", "")
         elif new_context.lower() == "show":
-            if not self.bot_contexts:
+            context_setting = self.db.get_setting(chat_id, "context", "")
+            contexts = context_setting.split("\n") if context_setting else []
+            if not contexts:
                 await update.message.reply_text("No active contexts.")
             else:
-                contexts = "\n".join([f"{i+1}. {ctx}" for i, ctx in enumerate(self.bot_contexts)])
                 await update.message.reply_text(f"Active contexts:\n{contexts}")
         else:
-            self.bot_contexts.append(new_context)
+            context_setting = self.db.get_setting(chat_id, "context", "")
+            contexts = context_setting.split("\n") if context_setting else []
+            self.logger.info(f"Existing contexts from DB: {contexts}, new context: {new_context}")
+            contexts.append(new_context)
+            new_contexts = "\n".join([f"{ctx}" for ctx in contexts])
+            self.db.set_setting(chat_id, "context", new_contexts)
         await update.message.set_reaction("👍")

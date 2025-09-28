@@ -9,7 +9,6 @@ class PhotoHandler:
         self.logger = bot.logger
         self.get_brain = bot.get_brain
         self.db = bot.db
-        self.bot_contexts = bot.bot_contexts
 
     async def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
@@ -38,7 +37,9 @@ class PhotoHandler:
         else:
             query = caption[2:].strip()
 
-        system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
+        context_setting = self.db.get_setting(chat_id, "context", "")
+        contexts = context_setting.split("\n") if context_setting else []
+        system_prompt = "\n".join([f"System: {ctx}" for ctx in contexts]) + "\n" if contexts else ""
         brain = self.get_brain(chat_id)
         response = await brain.process_image(photo_bytes, query, system_prompt)
 
@@ -47,7 +48,8 @@ class PhotoHandler:
             user_id=update.effective_user.id,
             username="bot",
             message_text=f"[Photo with caption: {caption}]:{response}",
-            timestamp=update.message.date
+            timestamp=update.message.date,
+            message_id=update.message.message_id
         )
 
         self.logger.debug(f"Generated response for photo: {response[:100]}...")

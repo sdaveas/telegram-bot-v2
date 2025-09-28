@@ -7,7 +7,6 @@ class Bee:
         self.logger = bot.logger
         self.get_brain = bot.get_brain
         self.db = bot.db
-        self.bot_contexts = bot.bot_contexts
 
     async def __call__(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = update.effective_chat.id
@@ -26,22 +25,25 @@ class Bee:
                 user_id=-1,
                 username="command",
                 message_text=command_text,
-                timestamp=update.message.date
+                timestamp=update.message.date,
+                message_id=update.message.message_id,
             )
         brain = self.get_brain(chat_id)
-        system_prompt = "\n".join([f"System: {ctx}" for ctx in self.bot_contexts]) + "\n" if self.bot_contexts else ""
+        context_setting = self.db.get_setting(chat_id, "context", "")
+        contexts = context_setting.split("\n") if context_setting else []
+        system_prompt = "\n".join([f"System: {ctx}" for ctx in contexts]) + "\n" if contexts else ""
         response = brain.process(command_text, recent_messages, system_prompt)
         self.logger.info(f"Generated response for {username}: {response}...")
-        
         await self.send_response(response, update)
         await update.message.set_reaction([])
 
         self.db.store_message(
             chat_id=chat_id,
-            user_id=self.bot.bot_id,
+            user_id=0,
             username="bot",
             message_text=response,
-            timestamp=update.message.date
+            timestamp=update.message.date,
+            message_id=update.message.message_id,
         )
 
     async def send_response(self, response: str, update: Update): 
