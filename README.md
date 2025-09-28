@@ -45,7 +45,8 @@ export TRANSLATE_API_URL='your_translate_API_url_here' # e.g. 'http://localhost:
 - **Context Management**: Maintain conversation context across messages
 - **Message History**: SQLite database for conversation tracking
 - **Model Switching**: Change between different Gemini models on the fly
-- **Translation**: Use `/translate on` to automatically translate messages from any language to english 
+- **Translation**: Use `/translate on` to automatically translate messages from any language to english
+- **Emoji Reactions**: React with 👾 to messages to get AI insights (including text, images, and voice messages)
 
 ## Usage
 
@@ -103,6 +104,8 @@ b explain this image
 
 Images without these triggers will be logged but not analyzed.
 
+You can also react with 👾 to any image to analyze it.
+
 ### Voice Messages (Speech-to-Text)
 The bot automatically transcribes voice messages using Gemini 1.5 Flash:
 
@@ -120,6 +123,13 @@ The bot automatically transcribes voice messages using Gemini 1.5 Flash:
 → Bot responds with transcription + answer
 ```
 
+3. **Using emoji reactions**:
+```
+[Send voice message]
+[React with 👾]
+→ Bot responds with the transcription
+```
+
 ### Text-to-Speech
 Convert any text message to speech:
 ```
@@ -130,6 +140,32 @@ Convert any text message to speech:
 
 Note: Greek voice handles both Greek (perfect) and English (with accent)
 
+### Message Reactions
+React to any message with 👾 to get AI insights:
+
+1. **Text messages**:
+```
+[Any text message]
+[React with 👾]
+→ Bot processes the text as a query and provides a response
+```
+
+2. **Images**:
+```
+[Any image]
+[React with 👾]
+→ Bot analyzes and describes the image
+```
+
+3. **Voice messages**:
+```
+[Any voice message]
+[React with 👾]
+→ Bot provides the transcription
+```
+
+The bot responds with 👀 while processing and removes its reaction when done.
+If the message type is not supported, the bot reacts with 🤷‍♂️.
 
 ## Running the Bot
 
@@ -198,6 +234,9 @@ telegram-bot-v2/
 
 ## Recent Updates
 
+- ✨ Added emoji reaction support (👾) for AI insights on any message type
+- 🔧 Moved context storage from memory to database for persistence
+- 🔧 Added message ID tracking for better message management
 - ✨ Added `/help` command for comprehensive usage instructions
 - ✨ Replaced Vosk with Gemini 1.5 Flash for better speech-to-text
 - ✨ Added text-to-speech with gTTS (Greek voice)
