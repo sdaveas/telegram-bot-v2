@@ -17,3 +17,4 @@ class NoopBrainHandler:
 
     async def process_image(self, image_bytes: bytearray, caption: str, system_prompt: str = "") -> str:
         return f"[NOOP] The backend '{self.backend_name}' is not available (missing API key)."
+

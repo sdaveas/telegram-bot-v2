@@ -71,6 +71,7 @@ class ReactionHandler:
         text = self.db.get_message_text(chat_id, message_id)
         if text != "":
             return text, "text"
-        
+
         file, category = try_get_file(chat_id, message_id)
         return file, category
+

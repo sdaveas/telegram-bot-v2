@@ -20,7 +20,7 @@ class GeminiBrainHandler:
         if not api_key:
             self.logger.error("GEMINI_API_KEY environment variable is not set")
             raise ValueError("GEMINI_API_KEY environment variable is not set")
-        
+
         # Accept model as index or name
         if isinstance(model, int):
             if model not in self.AVAILABLE_MODELS:
@@ -36,7 +36,7 @@ class GeminiBrainHandler:
         else:
             self.logger.error(f"Invalid model argument: {model}")
             raise ValueError(f"Invalid model argument: {model}")
-        
+
         # Define the Google Search tool for grounding.
         # This tells the Gemini model that it has access to a web search tool.
         self.google_search_tool = genai.types.Tool(google_search=genai.types.GoogleSearch())
@@ -54,7 +54,7 @@ class GeminiBrainHandler:
         except Exception as e:
             self.logger.error(f"Failed to initialize model {self.model_name}: {str(e)}")
             raise
-        
+
         self.logger.info(f"GeminiBrainHandler initialized with Gemini model {self.model_name} and Google Search grounding enabled.")
 
     def get_models(self):
@@ -123,7 +123,7 @@ class GeminiBrainHandler:
             # Check for grounding metadata and log the sources.
             # This is a key step for transparency and debugging.
             text = response.text
-            
+
             supports = []
             chunks = []
 
@@ -161,3 +161,4 @@ class GeminiBrainHandler:
             if 'InternalServerError' in str(type(e)):
                 return "I encountered a temporary error. Please try your request again in a moment." if not image_mode else "I encountered a temporary error. Please try analyzing the image again in a moment."
             return "I apologize, but I encountered an error processing your request." if not image_mode else "I apologize, but I encountered an error analyzing this image."
+

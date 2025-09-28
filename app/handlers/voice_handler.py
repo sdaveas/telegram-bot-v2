@@ -53,3 +53,4 @@ class VoiceHandler:
             self.logger.error(f"Error transcribing voice message with Gemini: {str(e)}")
             # Fallback to empty string if transcription fails
             return "Could not transcribe audio"
+

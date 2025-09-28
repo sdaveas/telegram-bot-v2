@@ -25,3 +25,4 @@ class TextHandler:
             self.logger.debug(f"Translation result: {translated}")
             if translated and translated['source_language'] != translated['destination_language']:
                 await update.message.reply_text(translated['translated_text'])
+

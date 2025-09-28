@@ -23,3 +23,4 @@ class Translate:
             msg = f"Translation is currently {translation}."
             msg += "\n\nUsage: /translate [on|off]"
             await update.message.reply_text(msg)
+

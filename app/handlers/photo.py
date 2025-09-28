@@ -58,3 +58,4 @@ class PhotoHandler:
 
         await update.message.reply_text(response)
         await update.message.set_reaction([])
+

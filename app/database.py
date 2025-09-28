@@ -73,7 +73,7 @@ class DatabaseHandler:
                 })
 
             return messages
-            
+
     def get_message_text(self, chat_id: int, message_id: int) -> str:
         """Retrieve the text of a specific message by chat_id and message_id"""
         with sqlite3.connect(self.db_path) as conn:
@@ -100,3 +100,4 @@ class DatabaseHandler:
             cursor.execute('INSERT OR REPLACE INTO settings (chat_id, key, value) VALUES (?, ?, ?)',
                           (chat_id, key, value))
             conn.commit()
+

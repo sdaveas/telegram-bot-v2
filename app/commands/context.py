@@ -38,3 +38,4 @@ class Context:
             new_contexts = "\n".join([f"{ctx}" for ctx in contexts])
             self.db.set_setting(chat_id, "context", new_contexts)
         await update.message.set_reaction("👍")
+

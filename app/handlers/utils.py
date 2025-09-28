@@ -21,3 +21,4 @@ def try_get_file(chat_id: int, message_id: int, categories=("photo", "voice")) -
         except FileNotFoundError:
             pass
     return None, ""
+

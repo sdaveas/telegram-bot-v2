@@ -29,6 +29,7 @@ make install
 # Required environment variables
 export TELEGRAM_BOT_TOKEN='your_bot_token_here'
 export GEMINI_API_KEY='your_gemini_api_key_here'
+export OPENAI_API_KEY='your_openai_api_key_here'
 export DB_PATH='database/messages.db'
 
 # Optional environment variables
@@ -41,7 +42,7 @@ export TRANSLATE_API_URL='your_translate_API_url_here' # e.g. 'http://localhost:
 - **Text Processing**: Multiple Gemini models (2.5 Pro, 2.5 Flash, 2.5 Flash-Lite)
 - **Image Analysis**: Multimodal image understanding with caption queries
 - **Speech-to-Text**: Voice message transcription using Gemini 1.5 Flash (Greek/English)
-- **Text-to-Speech**: Generate voice messages from text using gTTS (Greek voice)
+- **Text-to-Speech**: Generate voice messages from text using OpenAI TTS, Gemini TTS, or gTTS
 - **Context Management**: Maintain conversation context across messages
 - **Message History**: SQLite database for conversation tracking
 - **Model Switching**: Change between different Gemini models on the fly
@@ -85,6 +86,14 @@ export TRANSLATE_API_URL='your_translate_API_url_here' # e.g. 'http://localhost:
 /translate       # returns translation status
 /translate on    # enables translation
 /translate off   # disables translation
+```
+
+#### `/tts [provider]` - Manage text-to-speech providers
+```
+/tts              # Show available providers and current status
+/tts openai      # Switch to OpenAI TTS (default)
+/tts google      # Switch to Gemini TTS
+/tts gtts        # Switch to Google Translate TTS (Greek)
 ```
 
 ### Image Analysis
@@ -131,14 +140,15 @@ The bot automatically transcribes voice messages using Gemini 1.5 Flash:
 ```
 
 ### Text-to-Speech
-Convert any text message to speech:
+Convert any text message to speech using multiple providers (OpenAI, Gemini, or Google Translate):
+
 ```
 [Any text message]
 [Reply with: tts]
-→ Bot sends voice message with Greek pronunciation
+→ Bot sends voice message using current provider
 ```
 
-Note: Greek voice handles both Greek (perfect) and English (with accent)
+Use `/tts` command to view or change the current provider. OpenAI and Gemini TTS handle multilingual text naturally, while Google Translate TTS (gTTS) is optimized for Greek.
 
 ### Message Reactions
 React to any message with 👾 to get AI insights:
@@ -211,7 +221,9 @@ telegram-bot-v2/
 ## Key Technologies
 
 - **Gemini API**: Text generation, image analysis, speech transcription
-- **gTTS**: Text-to-speech synthesis (Greek voice)
+- **OpenAI TTS**: High-quality multilingual text-to-speech
+- **Gemini TTS**: Google's AI text-to-speech
+- **gTTS**: Google Translate text-to-speech (Greek optimized)
 - **python-telegram-bot**: Telegram Bot API wrapper
 - **SQLite**: Message history storage
 - **Docker**: Containerized deployment
@@ -239,7 +251,7 @@ telegram-bot-v2/
 - 🔧 Added message ID tracking for better message management
 - ✨ Added `/help` command for comprehensive usage instructions
 - ✨ Replaced Vosk with Gemini 1.5 Flash for better speech-to-text
-- ✨ Added text-to-speech with gTTS (Greek voice)
+- ✨ Added multiple TTS providers: OpenAI, Gemini, and gTTS
 - 🔧 Simplified Docker image (removed ffmpeg, Vosk dependencies)
 - 🔧 Model switching between three Gemini variants
 - 🔧 Reply-based TTS interface (reply "tts" to any message)

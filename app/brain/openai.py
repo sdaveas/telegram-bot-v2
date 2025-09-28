@@ -90,3 +90,4 @@ class OpenAIBrainHandler:
         except Exception as e:
             self.logger.error(f"OpenAI API error: {str(e)}")
             return "I apologize, but I encountered an error processing your request."
+

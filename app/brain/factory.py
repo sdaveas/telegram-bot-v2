@@ -68,3 +68,4 @@ def get_brain_handler(backend: str, model: str = None):
             pass
         return handler_cls(model)
     return handler_cls()
+

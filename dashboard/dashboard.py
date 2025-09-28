@@ -46,3 +46,4 @@ def recent_messages(limit: int = 10, chat_id: int = None):
 @app.get("/settings/{chat_id}")
 def chat_settings(chat_id: int):
     return query_db("SELECT * FROM settings WHERE chat_id = ?", (chat_id,))
+

@@ -46,9 +46,10 @@ class Bee:
             message_id=update.message.message_id,
         )
 
-    async def send_response(self, response: str, update: Update): 
+    async def send_response(self, response: str, update: Update):
         try:
             await update.message.reply_markdown(response)
         except Exception as e:
             self.logger.error(f"Error sending message: {e}")
             await update.message.reply_text(response)
+

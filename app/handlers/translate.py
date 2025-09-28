@@ -35,3 +35,4 @@ class TranslateHandler:
                     error_text = await resp.text()
                     self.logger.error(f"Translation API error {resp.status}: {error_text}")
                     return None
+

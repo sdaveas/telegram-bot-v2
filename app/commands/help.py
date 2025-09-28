@@ -39,3 +39,4 @@ class Help:
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
         self.logger.info(f"Help command used by {username} (chat_id: {chat_id})")
+

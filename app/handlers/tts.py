@@ -38,3 +38,4 @@ class TTSHandler:
         except Exception as e:
             self.logger.error(f"Error generating speech: {str(e)}")
             return None
+

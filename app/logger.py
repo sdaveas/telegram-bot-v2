@@ -36,3 +36,4 @@ def setup_logger(name='telegram_bot', log_dir='logs'):
     logger.addHandler(console_handler)
 
     return logger
+

@@ -85,3 +85,4 @@ class Model:
             self.logger.error(error_msg)
             await update.message.reply_text(error_msg)
             await update.message.set_reaction("👎")
+
