@@ -14,9 +14,11 @@ class TextHandler:
         user_id = update.message.from_user.id
         username = update.message.from_user.username
         text = update.message.text
+        date = update.message.date
+        message_id = update.message.message_id
 
-        self.logger.info(f"Storing message from user {username} in chat {chat_id}: {text}")
-        self.db.store_message(chat_id, user_id, username, text, update.message.date)
+        self.logger.info(f"Storing message from user {username} in chat {chat_id}/{message_id}: {text}")
+        self.db.store_message(chat_id, user_id, username, text, date, message_id=message_id)
 
         if self.translator and self.translation_is_enabled(chat_id):
             translated = await self.translator.translate(text, target_language="en")
