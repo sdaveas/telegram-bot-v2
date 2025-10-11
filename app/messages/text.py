@@ -54,7 +54,7 @@ class TextHandler:
 
                 if laugh_count >= threshold and not cooldown_active:
                     try:
-                        gif_url = await self.giphy.get_random_gif('laugh')
+                        gif_url = await self.giphy('laugh')
                         if gif_url:
                             await context.bot.send_animation(chat_id=chat_id, animation=gif_url)
                         # Store the current message_id for antispam
@@ -64,4 +64,3 @@ class TextHandler:
                         self.logger.error(f"Failed to send laugh GIF: {e}")
         except Exception as e:
             self.logger.error(f"Error in laugh detection: {e}")
-
