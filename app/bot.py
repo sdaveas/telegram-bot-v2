@@ -10,6 +10,7 @@ from app.commands.translate import Translate
 from app.commands.help import Help
 from app.commands.model import Model
 from app.commands.tts import TTS
+from app.commands.history import History
 from app.logger import setup_logger
 from app.database import DatabaseHandler
 from app.brain.factory import get_brain_handler, available_backends
@@ -45,6 +46,7 @@ class Bot:
         self.application.add_handler(CommandHandler("start", Help(self)))
         self.application.add_handler(CommandHandler("tts", TTS(self)))
         self.application.add_handler(CommandHandler("translate", Translate(self)))
+        self.application.add_handler(CommandHandler("history", History(self)))
 
         self.application.add_handler(MessageReactionHandler(ReactionHandler(self)))
 

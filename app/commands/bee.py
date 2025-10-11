@@ -1,5 +1,6 @@
 from telegram import Update
 from telegram.ext import ContextTypes
+from app.commands.history import historyDepthKey, default_history_limit
 
 class Bee:
     def __init__(self, bot):
@@ -17,7 +18,10 @@ class Bee:
             await update.message.reply_text("I'm up. What's up?")
             return
         await update.message.set_reaction("👀")
-        recent_messages = self.db.get_recent_messages(chat_id)
+
+        messages_limit = self.db.get_setting(chat_id, historyDepthKey, default_history_limit)
+
+        recent_messages = self.db.get_recent_messages(chat_id, messages_limit)
         if query:
             command_text = f"{username}: {query}"
             self.db.store_message(
