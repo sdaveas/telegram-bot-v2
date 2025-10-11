@@ -1,7 +1,7 @@
 from telegram import Update, ReactionTypeEmoji
 from telegram.ext import ContextTypes
 
-from app.handlers.utils import try_get_file
+from app.messages.utils import try_get_file
 
 class ReactionHandler:
     categories = ["text", "photo", "voice"]

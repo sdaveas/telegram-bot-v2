@@ -1,7 +1,7 @@
 from telegram import Update, ReactionTypeEmoji
 from telegram.ext import ContextTypes
 
-from app.handlers.utils import get_file_path, store_file
+from app.messages.utils import get_file_path, store_file
 
 class VoiceMessageHandler:
     def __init__(self, bot):

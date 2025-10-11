@@ -2,7 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from datetime import datetime, timezone, timedelta
 
-from app.handlers.utils import contains_laughter
+from app.messages.utils import contains_laughter
 from app.services.giphy import GiphyService
 
 class TextHandler:

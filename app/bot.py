@@ -1,21 +1,23 @@
-from app.handlers.reaction import ReactionHandler
-from app.handlers.text import TextHandler
-from app.handlers.photo import PhotoHandler
-from app.handlers.voice_handler import VoiceHandler
-from app.handlers.voice import VoiceMessageHandler
-from app.handlers.reply import ReplyHandler
-from app.commands.context import Context
+from app.messages.photo import PhotoHandler
+from app.messages.reaction import ReactionHandler
+from app.messages.reply import ReplyHandler
+from app.messages.text import TextHandler
+from app.messages.voice import VoiceMessageHandler
+from app.messages.voice_handler import VoiceHandler
+
 from app.commands.bee import Bee
-from app.commands.translate import Translate
+from app.commands.context import Context
 from app.commands.help import Help
-from app.commands.model import Model
-from app.commands.tts import TTS
 from app.commands.history import History
+from app.commands.model import Model
+from app.commands.translate import Translate
+from app.commands.tts import TTS
+
 from app.logger import setup_logger
 from app.database import DatabaseHandler
 from app.brain.factory import get_brain_handler, available_backends
-from app.handlers.tts import TTSHandler
-from app.handlers.translate import TranslateHandler
+from app.messages.tts import TTSHandler
+from app.messages.translate import TranslateHandler
 from telegram.ext import Application, CommandHandler, MessageHandler as TGMessageHandler, MessageReactionHandler, filters
 
 class Bot:
@@ -34,21 +36,21 @@ class Bot:
             self.logger.info(f"Translation API URL set to: {translate_api_url}")
             self.translator = TranslateHandler(translate_api_url)
 
-        self.application.add_handler(TGMessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, TextHandler(self), block=False))
         self.application.add_handler(TGMessageHandler(filters.PHOTO, PhotoHandler(self), block=False))
-        self.application.add_handler(TGMessageHandler(filters.VOICE, VoiceMessageHandler(self), block=False))
+        self.application.add_handler(MessageReactionHandler(ReactionHandler(self)))
         self.application.add_handler(TGMessageHandler(filters.REPLY, ReplyHandler(self), block=False))
+        self.application.add_handler(TGMessageHandler(filters.TEXT & ~filters.COMMAND & ~filters.REPLY, TextHandler(self), block=False))
+        self.application.add_handler(TGMessageHandler(filters.VOICE, VoiceMessageHandler(self), block=False))
 
         self.application.add_handler(CommandHandler("b", Bee(self)))
         self.application.add_handler(CommandHandler("context", Context(self)))
         self.application.add_handler(CommandHandler("help", Help(self)))
+        self.application.add_handler(CommandHandler("history", History(self)))
         self.application.add_handler(CommandHandler("model", Model(self)))
         self.application.add_handler(CommandHandler("start", Help(self)))
-        self.application.add_handler(CommandHandler("tts", TTS(self)))
         self.application.add_handler(CommandHandler("translate", Translate(self)))
-        self.application.add_handler(CommandHandler("history", History(self)))
+        self.application.add_handler(CommandHandler("tts", TTS(self)))
 
-        self.application.add_handler(MessageReactionHandler(ReactionHandler(self)))
 
     def get_brain(self, chat_id: int):
         if chat_id not in self.brain:
