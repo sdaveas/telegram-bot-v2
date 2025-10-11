@@ -14,6 +14,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GIPHY_API_KEY=${GIPHY_API_KEY}
       - TRANSLATE_API_URL=${TRANSLATE_API_URL}
     restart: unless-stopped
     network_mode: host
