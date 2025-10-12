@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from app.brain.factory import get_brain_handler, available_backends
 
+
 class Model:
     def __init__(self, bot):
         self.bot = bot
@@ -14,8 +15,8 @@ class Model:
         try:
             if not context.args:
                 # Show available backends and models for current backend
-                backend = self.db.get_setting(chat_id, 'backend', None)
-                model = self.db.get_setting(chat_id, 'model', None)
+                backend = self.db.get_setting(chat_id, "backend", None)
+                model = self.db.get_setting(chat_id, "model", None)
                 if backend is None:
                     backend = available_backends()[0]
                 brain = get_brain_handler(backend, model)
@@ -30,7 +31,7 @@ class Model:
                         backend_name = backend
                 else:
                     backend_name = backend
-                current_model = getattr(brain, 'current_model', getattr(brain, 'model_name', None))
+                current_model = getattr(brain, "current_model", getattr(brain, "model_name", None))
                 msg = [f"Current backend: {backend_name}/{current_model}", "Available backends:"]
                 for idx, name in enumerate(backend_names, 1):
                     marker = " (active)" if name == backend_name else ""
@@ -42,7 +43,9 @@ class Model:
                     marker = " (active)" if name == current_model else ""
                     msg.append(f"  {idx}. {name}{marker}")
                 msg.append("")
-                msg.append("Use /model <backend> <model> to select backend and model (by name or index). E.g. /model OPENAI gpt-4 or /model 2 1")
+                msg.append(
+                    "Use /model <backend> <model> to select backend and model (by name or index). E.g. /model OPENAI gpt-4 or /model 2 1"
+                )
                 await update.message.reply_text("\n".join(msg))
                 return
             # Parse backend and model from args
@@ -60,7 +63,9 @@ class Model:
                 for idx, name in enumerate(models, 1):
                     msg.append(f"  {idx}. {name}")
                 msg.append("")
-                msg.append(f"Use /model {backend} <model> to select a model (by name or index). E.g. /model {backend} 1 or /model {backend} {models[0]}")
+                msg.append(
+                    f"Use /model {backend} <model> to select a model (by name or index). E.g. /model {backend} 1 or /model {backend} {models[0]}"
+                )
                 await update.message.reply_text("\n".join(msg))
                 return
             else:
@@ -75,14 +80,15 @@ class Model:
                 await update.message.set_reaction("👎")
                 return
             self.bot.brain[chat_id] = brain
-            self.db.set_setting(chat_id, 'backend', backend)
+            self.db.set_setting(chat_id, "backend", backend)
             if model is not None:
-                self.db.set_setting(chat_id, 'model', str(model))
-            await update.message.reply_text(f"Switched to backend: {backend}, model: {getattr(brain, 'current_model', getattr(brain, 'model_name', None))}")
+                self.db.set_setting(chat_id, "model", str(model))
+            await update.message.reply_text(
+                f"Switched to backend: {backend}, model: {getattr(brain, 'current_model', getattr(brain, 'model_name', None))}"
+            )
             await update.message.set_reaction("👍")
         except Exception as e:
             error_msg = f"Error switching backend/model: {str(e)}"
             self.logger.error(error_msg)
             await update.message.reply_text(error_msg)
             await update.message.set_reaction("👎")
-

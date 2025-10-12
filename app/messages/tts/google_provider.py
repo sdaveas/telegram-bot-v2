@@ -5,6 +5,7 @@ import google.generativeai as genai
 from app.logger import setup_logger
 from .base import BaseTTSProvider
 
+
 class GoogleTTSProvider(BaseTTSProvider):
     """Google Cloud TTS provider"""
 
@@ -14,14 +15,14 @@ class GoogleTTSProvider(BaseTTSProvider):
     def __init__(self):
         self.logger = setup_logger()
         # Check if GEMINI_API_KEY is set
-        api_key = os.getenv('GEMINI_API_KEY')
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             self.logger.error("GEMINI_API_KEY environment variable is not set")
             raise ValueError("GEMINI_API_KEY environment variable is not set")
 
         try:
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-2.5-flash')
+            self.model = genai.GenerativeModel("gemini-2.5-flash")
             self._voice = None
             self.logger.info("Gemini TTS provider initialized")
         except Exception as e:
@@ -40,17 +41,11 @@ class GoogleTTSProvider(BaseTTSProvider):
         """Generate speech using Gemini TTS (audio generation via Responses API)."""
         try:
             # Ask Gemini to convert text to audio
-            prompt = {
-                "text": text,
-                "requestAudio": True,
-                "targetAudioMimeType": "audio/mpeg"
-            }
+            prompt = {"text": text, "requestAudio": True, "targetAudioMimeType": "audio/mpeg"}
             response = self.model.generate_content(
                 str(prompt),
-                generation_config=genai.types.GenerationConfig(
-                    candidate_count=1
-                ),
-                stream=False
+                generation_config=genai.types.GenerationConfig(candidate_count=1),
+                stream=False,
             )
 
             # Extract base64-encoded audio from candidates -> content -> parts -> inline_data.data
@@ -86,4 +81,3 @@ class GoogleTTSProvider(BaseTTSProvider):
         except Exception as e:
             self.logger.error(f"Error generating speech with Gemini TTS: {str(e)}")
             return None
-

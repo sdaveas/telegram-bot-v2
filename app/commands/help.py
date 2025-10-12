@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
+
 class Help:
     def __init__(self, bot):
         self.bot = bot
@@ -35,8 +36,7 @@ class Help:
 🔗 https://github.com/sdaveas/telegram-bot-v2
 
 """
-        await update.message.reply_text(help_text, parse_mode='Markdown')
+        await update.message.reply_text(help_text, parse_mode="Markdown")
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
         self.logger.info(f"Help command used by {username} (chat_id: {chat_id})")
-

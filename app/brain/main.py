@@ -1,9 +1,8 @@
-
 import sys
 from .factory import get_brain_handler, available_backends, select_backend
 
-def main():
 
+def main():
     if len(sys.argv) > 2:
         backend = sys.argv[1]
         model = sys.argv[2]
@@ -22,6 +21,7 @@ def main():
         # Prompt for model
         # Dynamically import the handler to get available models
         from .factory import _BACKENDS
+
         handler_cls = _BACKENDS[backend]
         handler_tmp = handler_cls()  # Use default model to get list
         models = handler_tmp.get_models()
@@ -61,6 +61,7 @@ def main():
                 with open(path, "rb") as f:
                     image_bytes = f.read()
                 import asyncio
+
                 result = asyncio.run(brain.process_image(image_bytes, caption))
                 print(f"Bot: {result}")
             except Exception as e:
@@ -69,6 +70,6 @@ def main():
             result = brain.process(prompt)
             print(f"Bot: {result}")
 
+
 if __name__ == "__main__":
     main()
-

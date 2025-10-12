@@ -4,6 +4,7 @@ from .base import BaseTTSProvider
 from .openai_provider import OpenAITTSProvider
 from .google_provider import GoogleTTSProvider
 
+
 class TTSHandler:
     """Main TTS handler that manages multiple providers"""
 
@@ -14,25 +15,28 @@ class TTSHandler:
 
         # Try to initialize providers
         try:
-            self.providers['openai'] = OpenAITTSProvider()
-            self._current_provider = 'openai'
+            self.providers["openai"] = OpenAITTSProvider()
+            self._current_provider = "openai"
         except Exception as e:
             self.logger.warning(f"Could not initialize OpenAI TTS: {str(e)}")
 
         try:
-            self.providers['google'] = GoogleTTSProvider()
+            self.providers["google"] = GoogleTTSProvider()
             if not self._current_provider:
-                self._current_provider = 'google'
+                self._current_provider = "google"
         except Exception as e:
             self.logger.warning(f"Could not initialize Google Cloud TTS: {str(e)}")
 
         # Always initialize gTTS provider
         from .gtts_provider import GTTSProvider
-        self.providers['gtts'] = GTTSProvider()
-        if not self._current_provider:
-            self._current_provider = 'gtts'
 
-        self.logger.info(f"TTS handler initialized with providers: {', '.join(self.providers.keys())}")
+        self.providers["gtts"] = GTTSProvider()
+        if not self._current_provider:
+            self._current_provider = "gtts"
+
+        self.logger.info(
+            f"TTS handler initialized with providers: {', '.join(self.providers.keys())}"
+        )
 
     @property
     def current_provider(self) -> str:
@@ -66,4 +70,3 @@ class TTSHandler:
 
         provider = self.providers[self._current_provider]
         return await provider.generate_speech(text)
-

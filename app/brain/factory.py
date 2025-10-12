@@ -1,12 +1,10 @@
-
-
-
 from .gemini import GeminiBrainHandler
 from .openai import OpenAIBrainHandler
 from .deepseek import DeepseekBrainHandler
 from .noop import NoopBrainHandler
 
 import os
+
 _BACKENDS = {}
 _BACKEND_CONFIG = [
     ("GEMINI", GeminiBrainHandler, "GEMINI_API_KEY"),
@@ -19,9 +17,11 @@ for name, handler, env_key in _BACKEND_CONFIG:
     else:
         _BACKENDS[name] = lambda *args, name=name: NoopBrainHandler(name)
 
+
 def available_backends():
     """Return a list of available backend names."""
     return list(_BACKENDS.keys())
+
 
 def select_backend(choice: str) -> str:
     """
@@ -42,6 +42,7 @@ def select_backend(choice: str) -> str:
     if choice in backends:
         return choice
     raise ValueError(f"Unknown backend: {choice}. Available: {', '.join(backends)} or their index.")
+
 
 def get_brain_handler(backend: str, model: str = None):
     """
@@ -68,4 +69,3 @@ def get_brain_handler(backend: str, model: str = None):
             pass
         return handler_cls(model)
     return handler_cls()
-

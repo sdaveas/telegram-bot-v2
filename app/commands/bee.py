@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import ContextTypes
 from app.commands.history import historyDepthKey, default_history_limit
 
+
 class Bee:
     def __init__(self, bot):
         self.bot = bot
@@ -13,7 +14,9 @@ class Bee:
         chat_id = update.effective_chat.id
         username = update.effective_user.username or update.effective_user.first_name
         query = " ".join(context.args) if context.args else ""
-        self.logger.info(f"Received /b command from {username} (chat_id: {chat_id}). Query: {query}")
+        self.logger.info(
+            f"Received /b command from {username} (chat_id: {chat_id}). Query: {query}"
+        )
         if not query:
             await update.message.reply_text("I'm up. What's up?")
             return
@@ -56,4 +59,3 @@ class Bee:
         except Exception as e:
             self.logger.error(f"Error sending message: {e}")
             await update.message.reply_text(response)
-

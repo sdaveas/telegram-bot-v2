@@ -1,8 +1,9 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-historyDepthKey = 'history_depth'
+historyDepthKey = "history_depth"
 default_history_limit = 10
+
 
 class History:
     def __init__(self, bot):
@@ -15,7 +16,9 @@ class History:
 
         try:
             if len(context.args) > 1 or (context.args and not context.args[0].isdigit()):
-                await update.message.reply_text("Usage: /history [depth]\nExample: /history 20 to set history depth to 20 messages.")
+                await update.message.reply_text(
+                    "Usage: /history [depth]\nExample: /history 20 to set history depth to 20 messages."
+                )
                 return
 
             if not context.args:
@@ -31,4 +34,3 @@ class History:
             error_msg = f"Error configuring history depth: {str(e)}"
             self.logger.error(error_msg)
             await update.message.reply_text(error_msg)
-

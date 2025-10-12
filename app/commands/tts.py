@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
+
 class TTS:
     def __init__(self, bot):
         self.bot = bot
@@ -13,7 +14,7 @@ class TTS:
         try:
             if not context.args:
                 # Show current settings and available providers
-                provider = self.db.get_setting(chat_id, 'tts_provider', None)
+                provider = self.db.get_setting(chat_id, "tts_provider", None)
                 if provider is None:
                     provider = self.bot.tts.current_provider
 
@@ -43,7 +44,7 @@ class TTS:
             # Set provider
             provider = context.args[0].lower()
             if self.bot.tts.set_provider(provider):
-                self.db.set_setting(chat_id, 'tts_provider', provider)
+                self.db.set_setting(chat_id, "tts_provider", provider)
                 await update.message.reply_text(f"✅ Switched to TTS provider: {provider}")
             else:
                 available = self.bot.tts.get_available_providers()
@@ -55,4 +56,3 @@ class TTS:
             error_msg = f"Error configuring TTS: {str(e)}"
             self.logger.error(error_msg)
             await update.message.reply_text(error_msg)
-

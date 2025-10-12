@@ -7,16 +7,13 @@ import io
 from app.logger import setup_logger
 # The most reliable way to import both classes is from the types submodule.
 
+
 class GeminiBrainHandler:
-    AVAILABLE_MODELS = {
-        1: 'gemini-2.5-pro',
-        2: 'gemini-2.5-flash',
-        3: 'gemini-2.5-flash-lite'
-    }
+    AVAILABLE_MODELS = {1: "gemini-2.5-pro", 2: "gemini-2.5-flash", 3: "gemini-2.5-flash-lite"}
 
     def __init__(self, model: int | str = 2):
         self.logger = setup_logger()
-        api_key = os.getenv('GEMINI_API_KEY')
+        api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
             self.logger.error("GEMINI_API_KEY environment variable is not set")
             raise ValueError("GEMINI_API_KEY environment variable is not set")
@@ -25,14 +22,18 @@ class GeminiBrainHandler:
         if isinstance(model, int):
             if model not in self.AVAILABLE_MODELS:
                 self.logger.error(f"Invalid model index {model}")
-                raise ValueError(f"Invalid model index {model}. Must be 1-{len(self.AVAILABLE_MODELS)}")
+                raise ValueError(
+                    f"Invalid model index {model}. Must be 1-{len(self.AVAILABLE_MODELS)}"
+                )
             self.model_name = self.AVAILABLE_MODELS[model]
         elif isinstance(model, str):
             if model in self.AVAILABLE_MODELS.values():
                 self.model_name = model
             else:
                 self.logger.error(f"Invalid model name or index {model}")
-                raise ValueError(f"Invalid model name or index {model}. Must be one of {list(self.AVAILABLE_MODELS.values())} or 1-{len(self.AVAILABLE_MODELS)}")
+                raise ValueError(
+                    f"Invalid model name or index {model}. Must be one of {list(self.AVAILABLE_MODELS.values())} or 1-{len(self.AVAILABLE_MODELS)}"
+                )
         else:
             self.logger.error(f"Invalid model argument: {model}")
             raise ValueError(f"Invalid model argument: {model}")
@@ -42,12 +43,8 @@ class GeminiBrainHandler:
         self.google_search_tool = genai.types.Tool(google_search=genai.types.GoogleSearch())
 
         client = genai.Client()
-        grounding_tool = types.Tool(
-            google_search=types.GoogleSearch()
-        )
-        self.config = types.GenerateContentConfig(
-            tools=[grounding_tool]
-        )
+        grounding_tool = types.Tool(google_search=types.GoogleSearch())
+        self.config = types.GenerateContentConfig(tools=[grounding_tool])
 
         try:
             self.model = client.models
@@ -55,7 +52,9 @@ class GeminiBrainHandler:
             self.logger.error(f"Failed to initialize model {self.model_name}: {str(e)}")
             raise
 
-        self.logger.info(f"GeminiBrainHandler initialized with Gemini model {self.model_name} and Google Search grounding enabled.")
+        self.logger.info(
+            f"GeminiBrainHandler initialized with Gemini model {self.model_name} and Google Search grounding enabled."
+        )
 
     def get_models(self):
         return list(self.AVAILABLE_MODELS.values())
@@ -63,7 +62,9 @@ class GeminiBrainHandler:
     def set_model(self, model_name):
         if model_name in self.AVAILABLE_MODELS.values():
             self.model_name = model_name
-            self.logger.info(f"Switched to Gemini model {model_name} with Google Search grounding enabled.")
+            self.logger.info(
+                f"Switched to Gemini model {model_name} with Google Search grounding enabled."
+            )
         else:
             raise ValueError(f"Invalid model name: {model_name}")
 
@@ -75,10 +76,12 @@ class GeminiBrainHandler:
         self._log_prompt(full_prompt)
         return self._generate_content(full_prompt)
 
-    async def process_image(self, image_bytes: bytearray, caption: str, system_prompt: str = "") -> str:
+    async def process_image(
+        self, image_bytes: bytearray, caption: str, system_prompt: str = ""
+    ) -> str:
         contents = [
             types.Part.from_text(text=self._format_image_prompt(caption, system_prompt)),
-            types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg")
+            types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
         ]
         self._log_prompt(contents)
         return self._generate_content(contents, image_mode=True)
@@ -112,13 +115,15 @@ class GeminiBrainHandler:
     def _generate_content(self, prompt, image_mode=False):
         try:
             response = self.model.generate_content(
-                model=self.model_name,
-                contents=prompt,
-                config=self.config
+                model=self.model_name, contents=prompt, config=self.config
             )
 
             if not response.candidates:
-                return "I apologize, but I cannot provide a response to that query due to safety constraints." if not image_mode else "I apologize, but I cannot analyze this image due to safety constraints."
+                return (
+                    "I apologize, but I cannot provide a response to that query due to safety constraints."
+                    if not image_mode
+                    else "I apologize, but I cannot analyze this image due to safety constraints."
+                )
 
             # Check for grounding metadata and log the sources.
             # This is a key step for transparency and debugging.
@@ -127,10 +132,16 @@ class GeminiBrainHandler:
             supports = []
             chunks = []
 
-            if response.candidates[0].grounding_metadata and response.candidates[0].grounding_metadata.grounding_supports:
+            if (
+                response.candidates[0].grounding_metadata
+                and response.candidates[0].grounding_metadata.grounding_supports
+            ):
                 supports = response.candidates[0].grounding_metadata.grounding_supports
 
-            if response.candidates[0].grounding_metadata and response.candidates[0].grounding_metadata.grounding_chunks:
+            if (
+                response.candidates[0].grounding_metadata
+                and response.candidates[0].grounding_metadata.grounding_chunks
+            ):
                 chunks = response.candidates[0].grounding_metadata.grounding_chunks
 
             sorted_supports = sorted(supports, key=lambda s: s.segment.end_index, reverse=True)
@@ -155,10 +166,21 @@ class GeminiBrainHandler:
             return text
         except ValueError as e:
             self.logger.warning(f"Gemini API ValueError: {str(e)}")
-            return "I apologize, but I cannot provide a response to that query due to safety constraints." if not image_mode else "I apologize, but I cannot analyze this image due to safety constraints."
+            return (
+                "I apologize, but I cannot provide a response to that query due to safety constraints."
+                if not image_mode
+                else "I apologize, but I cannot analyze this image due to safety constraints."
+            )
         except Exception as e:
             self.logger.error(f"Gemini API error: {str(e)}")
-            if 'InternalServerError' in str(type(e)):
-                return "I encountered a temporary error. Please try your request again in a moment." if not image_mode else "I encountered a temporary error. Please try analyzing the image again in a moment."
-            return "I apologize, but I encountered an error processing your request." if not image_mode else "I apologize, but I encountered an error analyzing this image."
-
+            if "InternalServerError" in str(type(e)):
+                return (
+                    "I encountered a temporary error. Please try your request again in a moment."
+                    if not image_mode
+                    else "I encountered a temporary error. Please try analyzing the image again in a moment."
+                )
+            return (
+                "I apologize, but I encountered an error processing your request."
+                if not image_mode
+                else "I apologize, but I encountered an error analyzing this image."
+            )

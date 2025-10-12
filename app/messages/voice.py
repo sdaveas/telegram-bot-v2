@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes
 
 from app.messages.utils import get_file_path, store_file
 
+
 class VoiceMessageHandler:
     def __init__(self, bot):
         self.bot = bot
@@ -19,4 +20,3 @@ class VoiceMessageHandler:
         file_path = get_file_path("voice", chat_id, update.message.message_id)
         store_file(file_path, voice_bytes)
         self.logger.info(f"Received voice message from {username} (chat_id: {chat_id})")
-

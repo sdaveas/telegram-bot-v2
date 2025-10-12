@@ -3,6 +3,7 @@ from telegram.ext import ContextTypes
 
 from app.messages.utils import try_get_file
 
+
 class ReactionHandler:
     categories = ["text", "photo", "voice"]
 
@@ -21,14 +22,16 @@ class ReactionHandler:
             self.logger.info(f"don't handle reaction {update.message_reaction}")
             return
 
-        subject, category = self.get_categorized_subject(update.effective_chat.id, update.message_reaction.message_id)
+        subject, category = self.get_categorized_subject(
+            update.effective_chat.id, update.message_reaction.message_id
+        )
         if category not in self.categories:
             self.logger.warning(f"Unknown category [{category}] for file {subject}")
             try:
                 await context.bot.set_message_reaction(
                     chat_id=update.effective_chat.id,
                     message_id=update.message_reaction.message_id,
-                    reaction=[ReactionTypeEmoji("🤷‍♂️")]
+                    reaction=[ReactionTypeEmoji("🤷‍♂️")],
                 )
             except Exception as e:
                 self.logger.error(f"Error setting reaction: {e}")
@@ -39,32 +42,38 @@ class ReactionHandler:
         await context.bot.set_message_reaction(
             chat_id=update.effective_chat.id,
             message_id=update.message_reaction.message_id,
-            reaction=[ReactionTypeEmoji("👀")]
+            reaction=[ReactionTypeEmoji("👀")],
         )
 
         context_setting = self.db.get_setting(update.effective_chat.id, "context", "")
         contexts = context_setting.split("\n") if context_setting else []
         system_prompt = "\n".join([f"System: {ctx}" for ctx in contexts]) + "\n" if contexts else ""
         if category == "text":
-            self.logger.info(f"Processing text reaction for message ID {update.message_reaction.message_id}. Context: {contexts}")
+            self.logger.info(
+                f"Processing text reaction for message ID {update.message_reaction.message_id}. Context: {contexts}"
+            )
             brain = self.get_brain(update.effective_chat.id)
             response = brain.process("Use this message as a query: " + subject, system_prompt)
         elif category == "photo":
-            self.logger.info(f"Processing photo reaction for message ID {update.message_reaction.message_id}")
+            self.logger.info(
+                f"Processing photo reaction for message ID {update.message_reaction.message_id}"
+            )
             brain = self.get_brain(update.effective_chat.id)
             response = await brain.process_image(subject, "Explain this image", system_prompt)
         elif category == "voice":
-            self.logger.info(f"Processing voice reaction for message ID {update.message_reaction.message_id}")
+            self.logger.info(
+                f"Processing voice reaction for message ID {update.message_reaction.message_id}"
+            )
             response = await self.voice.transcribe_voice(subject)
         await context.bot.send_message(
             chat_id=update.effective_chat.id,
             text=response,
-            reply_to_message_id=update.message_reaction.message_id
+            reply_to_message_id=update.message_reaction.message_id,
         )
         await context.bot.set_message_reaction(
             chat_id=update.effective_chat.id,
             message_id=update.message_reaction.message_id,
-            reaction=[]
+            reaction=[],
         )
 
     def get_categorized_subject(self, chat_id: int, message_id: int) -> tuple[str, str]:
@@ -74,4 +83,3 @@ class ReactionHandler:
 
         file, category = try_get_file(chat_id, message_id)
         return file, category
-

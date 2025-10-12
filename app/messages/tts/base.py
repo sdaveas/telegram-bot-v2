@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 
+
 class BaseTTSProvider(ABC):
     """Base class for all TTS providers"""
 
@@ -20,4 +21,3 @@ class BaseTTSProvider(ABC):
     def voices(self) -> list[str]:
         """Get list of available voices"""
         pass
-
