@@ -17,6 +17,7 @@ dotenv = "*"
 
 [dev-packages]
 pytest = "*"
+ruff = "*"
 
 [requires]
 python_version = "3.13"

@@ -23,5 +23,13 @@ install:
 pull:
 	git pull
 
+# Lint the code
+lint:
+	pipenv run ruff check .
+
+# Format the code
+format:
+	pipenv run ruff format .
+
 # Run the latest version
-update: pull test docker-down docker-up
+update: pull lint test docker-down docker-up
