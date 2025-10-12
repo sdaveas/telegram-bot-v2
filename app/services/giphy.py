@@ -2,21 +2,25 @@ import aiohttp
 import os
 import random
 from typing import Optional
-from logger import setup_logger
-
+from app.logger import setup_logger
 
 GIPHY_API_KEY = os.getenv('GIPHY_API_KEY')
 
-base_url = "https://api.giphy.com/v1/gifs"
-random_endpoint = "random"
+ratings = ['g', 'pg', 'pg-13', 'r']
 
 class GiphyService:
-    def __init__(self):
-        self.api_key = GIPHY_API_KEY
+    def __init__(self, api_key: str, rating: str = 'g'):
+        self.api_key = api_key 
         self.logger = setup_logger()
+        self.rating = rating
 
         if not self.api_key:
             self.logger.error("API KEY is not set. GiphyService will be deactivated.")
+            return
+
+        if self.rating not in ratings:
+            self.logger.warning(f"Invalid rating '{self.rating}' provided. Defaulting to 'g'.")
+            self.rating = 'g'
 
     async def __call__(self, tag: str) -> Optional[str]:
         if self.api_key:
@@ -26,17 +30,16 @@ class GiphyService:
 
     async def get_random_gif(self, tag: str) -> Optional[str]:
         """Fetch a random laughter gif from Giphy"""
-        search_term = random.choice([tag])
 
+        url = f"https://api.giphy.com/v1/gifs/random"
         params = {
             'api_key': self.api_key,
-            'tag': search_term,
-            'rating': 'g'  # Keep it family-friendly
+            'tag': random.choice([tag]),
+            'rating': self.rating
         }
 
         try:
             async with aiohttp.ClientSession() as session:
-                url = f"{base_url}/{random_endpoint}"
                 async with session.get(url, params=params) as response:
                     if response.status == 200:
                         data = await response.json()

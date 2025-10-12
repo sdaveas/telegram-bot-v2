@@ -13,8 +13,10 @@ vosk = "*"
 google-cloud-texttospeech = "*"
 openai = ">=1.0.0"
 gtts = "*"
+dotenv = "*"
 
 [dev-packages]
+pytest = "*"
 
 [requires]
 python_version = "3.13"
