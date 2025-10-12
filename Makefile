@@ -12,6 +12,9 @@ docker-up:
 docker-down:
 	docker-compose down
 
+test:
+	pipenv run pytest -v
+
 # Install dependencies
 install:
 	pipenv install
@@ -21,4 +24,4 @@ pull:
 	git pull
 
 # Run the latest version
-update: pull docker-down docker-up
+update: pull test docker-down docker-up
