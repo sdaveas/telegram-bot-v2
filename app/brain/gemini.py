@@ -1,10 +1,11 @@
 import os
+from typing import Union
+
 from google import genai
 from google.genai import types
-from PIL import Image
-import io
 
 from app.logger import setup_logger
+
 # The most reliable way to import both classes is from the types submodule.
 
 
@@ -112,7 +113,9 @@ class GeminiBrainHandler:
         self.logger.info(prompt)
         self.logger.info("---END PROMPT---")
 
-    def _generate_content(self, prompt, image_mode=False):
+    def _generate_content(
+        self, prompt: Union[str, list[types.Part]], image_mode: bool = False
+    ) -> str:
         try:
             response = self.model.generate_content(
                 model=self.model_name, contents=prompt, config=self.config
@@ -144,7 +147,12 @@ class GeminiBrainHandler:
             ):
                 chunks = response.candidates[0].grounding_metadata.grounding_chunks
 
-            sorted_supports = sorted(supports, key=lambda s: s.segment.end_index, reverse=True)
+            # Sort supports by end_index in reverse order
+            sorted_supports = sorted(
+                supports,
+                key=lambda s: getattr(getattr(s, "segment", None), "end_index", 0),
+                reverse=True,
+            )
 
             # Collect all unique citations in order of first appearance
             citation_map = {}

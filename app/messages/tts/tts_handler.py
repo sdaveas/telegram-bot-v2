@@ -1,8 +1,10 @@
 from typing import Optional
+
 from app.logger import setup_logger
+
 from .base import BaseTTSProvider
-from .openai_provider import OpenAITTSProvider
 from .google_provider import GoogleTTSProvider
+from .openai_provider import OpenAITTSProvider
 
 
 class TTSHandler:

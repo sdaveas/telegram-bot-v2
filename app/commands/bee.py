@@ -1,6 +1,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from app.commands.history import historyDepthKey, default_history_limit
+
+from app.commands.history import default_history_limit, historyDepthKey
 
 
 class Bee:

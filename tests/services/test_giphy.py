@@ -2,9 +2,11 @@
 
 import asyncio
 import os
+
 import pytest
-from app.services.giphy import GiphyService
 from dotenv import load_dotenv
+
+from app.services.giphy import GiphyService
 
 
 @pytest.fixture(autouse=True)
@@ -15,7 +17,7 @@ def setup_env():
 
 def test_giphy_service_with_key():
     """Test that GiphyService returns a URL when given a valid API key."""
-    api_key = os.getenv("GIPHY_API_KEY")
+    api_key = os.getenv("GIPHY_API_KEY") or ""
     giphy = GiphyService(api_key, rating="r")
     result = asyncio.run(giphy("laughter"))
     assert result is not None

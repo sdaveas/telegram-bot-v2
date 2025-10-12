@@ -1,5 +1,7 @@
 import os
+
 import requests
+
 from app.logger import setup_logger
 
 
@@ -55,5 +57,5 @@ class DeepseekBrainHandler:
     async def process_image(
         self, image_bytes: bytearray, caption: str, system_prompt: str = ""
     ) -> str:
-        self.logger.error(f"tried to process image with deepseek")
+        self.logger.error("tried to process image with deepseek")
         return "I apologize, image processing is not supported with Deepseek yet."

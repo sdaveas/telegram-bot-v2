@@ -1,4 +1,4 @@
-from telegram import Update, ReactionTypeEmoji
+from telegram import ReactionTypeEmoji, Update
 from telegram.ext import ContextTypes
 
 from app.messages.utils import try_get_file
@@ -50,7 +50,8 @@ class ReactionHandler:
         system_prompt = "\n".join([f"System: {ctx}" for ctx in contexts]) + "\n" if contexts else ""
         if category == "text":
             self.logger.info(
-                f"Processing text reaction for message ID {update.message_reaction.message_id}. Context: {contexts}"
+                f"Processing text reaction for message ID {update.message_reaction.message_id}.\n"
+                f"Context: {contexts}"
             )
             brain = self.get_brain(update.effective_chat.id)
             response = brain.process("Use this message as a query: " + subject, system_prompt)

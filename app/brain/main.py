@@ -1,5 +1,6 @@
 import sys
-from .factory import get_brain_handler, available_backends, select_backend
+
+from .factory import available_backends, get_brain_handler, select_backend
 
 
 def main():

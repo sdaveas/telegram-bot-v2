@@ -1,10 +1,14 @@
-from app.messages.photo import PhotoHandler
-from app.messages.reaction import ReactionHandler
-from app.messages.reply import ReplyHandler
-from app.messages.text import TextHandler
-from app.messages.voice import VoiceMessageHandler
-from app.messages.voice_handler import VoiceHandler
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    MessageReactionHandler,
+    filters,
+)
+from telegram.ext import (
+    MessageHandler as TGMessageHandler,
+)
 
+from app.brain.factory import available_backends, get_brain_handler
 from app.commands.bee import Bee
 from app.commands.context import Context
 from app.commands.help import Help
@@ -12,19 +16,16 @@ from app.commands.history import History
 from app.commands.model import Model
 from app.commands.translate import Translate
 from app.commands.tts import TTS
-
-from app.logger import setup_logger
 from app.database import DatabaseHandler
-from app.brain.factory import get_brain_handler, available_backends
-from app.messages.tts import TTSHandler
+from app.logger import setup_logger
+from app.messages.photo import PhotoHandler
+from app.messages.reaction import ReactionHandler
+from app.messages.reply import ReplyHandler
+from app.messages.text import TextHandler
 from app.messages.translate import TranslateHandler
-from telegram.ext import (
-    Application,
-    CommandHandler,
-    MessageHandler as TGMessageHandler,
-    MessageReactionHandler,
-    filters,
-)
+from app.messages.tts import TTSHandler
+from app.messages.voice import VoiceMessageHandler
+from app.messages.voice_handler import VoiceHandler
 
 
 class Bot:

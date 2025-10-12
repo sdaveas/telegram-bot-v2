@@ -1,5 +1,7 @@
-import aiohttp
 from typing import Optional
+
+import aiohttp
+
 from app.logger import setup_logger
 
 

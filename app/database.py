@@ -1,6 +1,5 @@
 import sqlite3
 from datetime import datetime
-from typing import List, Dict
 
 
 class DatabaseHandler:
@@ -54,14 +53,16 @@ class DatabaseHandler:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO messages (chat_id, user_id, username, message_text, timestamp, message_id)
+                INSERT INTO messages (
+                    chat_id, user_id, username, message_text, timestamp, message_id
+                )
                 VALUES (?, ?, ?, ?, ?, ?)
             """,
                 (chat_id, user_id, username, message_text, timestamp, message_id),
             )
             conn.commit()
 
-    def get_recent_messages(self, chat_id: int, limit: int = 10) -> List[Dict]:
+    def get_recent_messages(self, chat_id: int, limit: int = 10) -> list[dict]:
         """Retrieve recent messages for a specific chat"""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row

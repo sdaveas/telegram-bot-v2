@@ -1,4 +1,4 @@
-from telegram import Update, ReactionTypeEmoji
+from telegram import Update
 from telegram.ext import ContextTypes
 
 from app.messages.utils import get_file_path, load_file
@@ -36,7 +36,8 @@ class ReplyHandler:
 
         if update.message.reply_to_message.photo:
             self.logger.info(
-                f"Processing photo reply for message ID {update.message.reply_to_message.message_id}"
+                f"Processing photo reply for message ID "
+                f"{update.message.reply_to_message.message_id}"
             )
             file_path = get_file_path("photo", chat_id, update.message.reply_to_message.message_id)
             file = load_file(file_path)
@@ -53,7 +54,8 @@ class ReplyHandler:
             file = load_file(file_path)
 
             self.logger.info(
-                f"Processing voice reply for message ID {update.message.reply_to_message.message_id}"
+                f"Processing voice reply for message ID "
+                f"{update.message.reply_to_message.message_id}"
             )
             transcription = await self.voice.transcribe_voice(file)
             brain = self.get_brain(update.effective_chat.id)

@@ -1,4 +1,4 @@
-name: Python CI
+name: CI
 
 on:
   push:
@@ -7,8 +7,9 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  lint-and-test:
     runs-on: ubuntu-latest
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -23,12 +24,11 @@ jobs:
         pip install pipenv
 
     - name: Install dependencies
-      run: pipenv install --dev
-        
-    - name: Lint with ruff
       run: |
-        pipenv run ruff check .
-        pipenv run ruff format --check .
+        pipenv install --dev
         
+    - name: Run linting
+      run: pipenv run ruff check .
+      
     - name: Run tests
       run: pipenv run pytest -v

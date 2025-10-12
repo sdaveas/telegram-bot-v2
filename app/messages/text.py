@@ -1,6 +1,5 @@
 from telegram import Update
 from telegram.ext import ContextTypes
-from datetime import datetime, timezone, timedelta
 
 from app.messages.utils import contains_laughter
 from app.services.giphy import GiphyService
@@ -67,7 +66,8 @@ class TextHandler:
                         # Store the current message_id for antispam
                         self.db.set_setting(chat_id, "last_laugh_gif_message_id", str(message_id))
                         self.logger.info(
-                            f"Laugh GIF sent in chat {chat_id}. Next gif allowed after {antispam_messages} more messages."
+                            f"Laugh GIF sent in chat {chat_id}.\n"
+                            f"Next gif allowed after {antispam_messages} more messages."
                         )
                     except Exception as e:
                         self.logger.error(f"Failed to send laugh GIF: {e}")

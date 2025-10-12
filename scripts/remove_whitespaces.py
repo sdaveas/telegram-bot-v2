@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-import os
 import glob
+import os
 
 
 def remove_trailing_whitespace(file_path):
     """Remove trailing whitespace from a file."""
-    with open(file_path, "r") as f:
+    with open(file_path) as f:
         lines = f.readlines()
 
     # Remove trailing whitespace from each line

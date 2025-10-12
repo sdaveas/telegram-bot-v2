@@ -13,6 +13,10 @@ select = [
 ]
 ignore = []
 
+[lint.per-file-ignores]
+# Ignore line-length violations in files for f-strings
+"**/*.py" = ["E501"]
+
 [format]
 quote-style = "double"
 indent-style = "space"

@@ -1,6 +1,8 @@
-import os
 import base64
+import os
+
 import google.generativeai as genai
+
 from app.logger import setup_logger
 
 
@@ -32,7 +34,8 @@ class VoiceHandler:
             # Create the prompt for transcription
             prompt = """Please transcribe the following audio.
             The audio contains Greek speech with some English technical terms.
-            Please preserve any English words exactly as spoken and transcribe the Greek text properly.
+            Please preserve any English words exactly as spoken\n
+            and transcribe the Greek text properly.
             Return ONLY the transcription, no additional text or explanation."""
 
             # Prepare the content with audio data

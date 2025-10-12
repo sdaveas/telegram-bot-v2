@@ -1,7 +1,6 @@
 import os
 import re
-
-from typing import Tuple, Optional
+from typing import Optional
 
 
 def get_file_path(category: str, chat_id: int, message_id: int) -> str:
@@ -21,7 +20,7 @@ def load_file(file_path: str) -> bytes:
 
 def try_get_file(
     chat_id: int, message_id: int, categories=("photo", "voice")
-) -> Tuple[Optional[bytes], str]:
+) -> tuple[Optional[bytes], str]:
     for category in categories:
         file_path = get_file_path(category, chat_id, message_id)
         try:

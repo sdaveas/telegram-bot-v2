@@ -1,104 +1,80 @@
 import os
-import io
+
 import openai
+
 from app.logger import setup_logger
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 class OpenAIBrainHandler:
-    AVAILABLE_MODELS = ["gpt-4o", "gpt-3.5-turbo"]
-
-    def __init__(self, model_name: str = AVAILABLE_MODELS[0]):
-        self.logger = setup_logger()
-        api_key = os.getenv("OPENAI_API_KEY")
-        if not api_key:
-            self.logger.error("OPENAI_API_KEY environment variable is not set")
-            raise ValueError("OPENAI_API_KEY environment variable is not set")
-        openai.api_key = api_key
-        if model_name not in self.AVAILABLE_MODELS:
-            self.logger.error(f"Invalid model name {model_name}")
-            raise ValueError(
-                f"Invalid model name {model_name}. Must be one of {self.AVAILABLE_MODELS}"
-            )
-        self.current_model = model_name
-        self.logger.info(f"OpenAIBrainHandler initialized with model {self.current_model}")
-
-    def get_models(self):
-        return self.AVAILABLE_MODELS
-
-    def set_model(self, model_name):
-        if model_name in self.AVAILABLE_MODELS:
-            self.current_model = model_name
-            self.logger.info(f"Switched to OpenAI model {model_name}")
-        else:
-            raise ValueError(f"Invalid model name: {model_name}")
-
-    def process(self, prompt, recent_messages=None, system_prompt=""):
-        context = self._format_context(recent_messages) if recent_messages else ""
-        full_prompt = self._format_prompt(prompt, context, system_prompt)
-        self._log_prompt(full_prompt)
-        return self._generate_content(full_prompt)
-
-    async def process_image(
-        self, image_bytes: bytearray, caption: str, system_prompt: str = ""
-    ) -> str:
-        from PIL import Image
-
-        image = Image.open(io.BytesIO(image_bytes))
-        prompt = self._format_image_prompt(caption, system_prompt)
-        self._log_prompt(prompt)
-        return self._generate_content(prompt, image=image)
+    def __init__(self, model="gpt-3.5-turbo", api_key=None):
+        """Initialize OpenAI handler with optional model override."""
+        self.api_key = api_key or OPENAI_API_KEY
+        self.model_name = model
+        self.logger = setup_logger("OpenAIBrainHandler")
+        self.current_model = model
+        self.client = openai.OpenAI(api_key=self.api_key)
 
     def _format_prompt(self, prompt, context, system_prompt):
-        return f"{system_prompt}\n{context}\nUser query: {prompt}\nPlease provide a concise and relevant response."
+        parts = [
+            system_prompt,
+            context,
+            f"User query: {prompt}",
+            "Please provide a concise and relevant response.",
+        ]
+        return "\n".join(filter(None, parts))
 
     def _format_image_prompt(self, caption, system_prompt):
-        return f"{system_prompt}Please analyze this image{' and respond to: ' + caption if caption else '.'}\nProvide a clear and concise response."
+        parts = [
+            "Please describe this image" + (f" and respond to: {caption}" if caption else "."),
+            "Provide a clear and concise response.",
+        ]
+        return "\n".join(parts)
 
-    def _log_prompt(self, prompt):
-        self.logger.info(f"Using model: {self.current_model}")
-        self.logger.info("---START PROMPT---")
-        self.logger.info(prompt)
-        self.logger.info("---END PROMPT---")
-
-    def _format_context(self, messages):
-        if not messages:
-            return "No recent messages."
-        context = []
-        for msg in reversed(messages):
-            context.append(f"{msg['username']}: {msg['message_text']}")
-        return "\n".join(context)
-
-    def _generate_content(self, prompt, image=None):
-        try:
-            if image is None:
-                # Text-only
-                response = openai.ChatCompletion.create(
-                    model=self.current_model, messages=[{"role": "user", "content": prompt}]
-                )
-                return response.choices[0].message["content"]
-            else:
-                # Image + text (OpenAI Vision, e.g., GPT-4o or GPT-4V)
-                import base64
-
-                buffered = io.BytesIO()
-                image.save(buffered, format="PNG")
-                img_b64 = base64.b64encode(buffered.getvalue()).decode()
-                response = openai.ChatCompletion.create(
-                    model=self.current_model,
+    async def get_response(self, prompt, context="", system_prompt="", image_bytes=None):
+        """Get response from OpenAI API."""
+        if image_bytes:
+            try:
+                self.logger.info("OpenAI: Processing image...")
+                response = await self.client.chat.completions.create(
+                    model=self.model_name,
                     messages=[
+                        {"role": "system", "content": system_prompt},
                         {
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": prompt},
                                 {
                                     "type": "image_url",
-                                    "image_url": {"url": f"data:image/png;base64,{img_b64}"},
+                                    "image_url": {
+                                        "url": f"data:image/jpeg;base64,{image_bytes.decode()}",
+                                        "detail": "auto",
+                                    },
                                 },
+                                {"type": "text", "text": prompt},
                             ],
-                        }
+                        },
                     ],
+                    max_tokens=2000,
                 )
-                return response.choices[0].message["content"]
+                content = response.choices[0].message.content
+                self.logger.info(f"OpenAI image response: {content}")
+                return content
+            except Exception as e:
+                self.logger.error(f"Error processing image with OpenAI: {str(e)}")
+                return "I apologize, but I cannot analyze this image due to an error."
+
+        try:
+            formatted_prompt = self._format_prompt(prompt, context, system_prompt)
+            self.logger.info(f"OpenAI: Sending prompt: {formatted_prompt}")
+            response = await self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[{"role": "user", "content": formatted_prompt}],
+                max_tokens=2000,
+            )
+            content = response.choices[0].message.content
+            self.logger.info(f"OpenAI response: {content}")
+            return content
         except Exception as e:
             self.logger.error(f"OpenAI API error: {str(e)}")
-            return "I apologize, but I encountered an error processing your request."
+            return "I encountered an error processing your request. Please try again."

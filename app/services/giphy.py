@@ -1,7 +1,9 @@
-import aiohttp
 import os
 import random
 from typing import Optional
+
+import aiohttp
+
 from app.logger import setup_logger
 
 GIPHY_API_KEY = os.getenv("GIPHY_API_KEY")
@@ -32,7 +34,7 @@ class GiphyService:
     async def get_random_gif(self, tag: str) -> Optional[str]:
         """Fetch a random laughter gif from Giphy"""
 
-        url = f"https://api.giphy.com/v1/gifs/random"
+        url = "https://api.giphy.com/v1/gifs/random"
         params = {"api_key": self.api_key, "tag": random.choice([tag]), "rating": self.rating}
 
         try:

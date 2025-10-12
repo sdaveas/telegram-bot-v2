@@ -1,4 +1,5 @@
 import os
+
 from app.bot import Bot
 from app.logger import setup_logger
 

@@ -1,9 +1,9 @@
-from .gemini import GeminiBrainHandler
-from .openai import OpenAIBrainHandler
-from .deepseek import DeepseekBrainHandler
-from .noop import NoopBrainHandler
-
 import os
+
+from .deepseek import DeepseekBrainHandler
+from .gemini import GeminiBrainHandler
+from .noop import NoopBrainHandler
+from .openai import OpenAIBrainHandler
 
 _BACKENDS = {}
 _BACKEND_CONFIG = [
